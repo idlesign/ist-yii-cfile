@@ -2,11 +2,9 @@
 /**
  * CFile provides common functions to manipulate files with Yii.
  *
- * @version 0.1
+ * @version 0.2
  *
- * @todo create method
- * @todo get/setContents methods
- * @todo readable/writable properties
+ * @todo setters for $_basename, $_extension and $_filename properties (lazy rename)
  *
  * @author idle sign <idlesign@yandex.ru>
  * @link http://www.yiiframework.com/extension/cfile/
@@ -31,6 +29,14 @@ class CFile extends CApplicationComponent
      * @var boolean 'true' if file described by $_realpath exists
      */
     private $_exists;
+    /**
+     * @var boolean 'true' if file described by $_realpath is readable
+     */
+    private $_readable;
+    /**
+     * @var boolean 'true' if file described by $_realpath writeable
+     */
+    private $_writeable;
     /**
      * @var string basename of the file (eg. 'myfile.htm' for '/var/www/htdocs/files/myfile.htm')
      */
@@ -71,6 +77,10 @@ class CFile extends CApplicationComponent
      * @var string file permissions (considered octal eg. '0755')
      */
     private $_permissions;
+    /**
+     * @var resource file pointer resource (for {@link open} & {@link close})
+     */
+    private $_handle=null;
 
 
     /**
@@ -95,7 +105,8 @@ class CFile extends CApplicationComponent
      * @param string $level Level of the message (e.g. 'trace', 'warning', 'error', 'info', see
      * CLogger constants definitions)
      */
-    private function addLog($message, $level='info'){
+    private function addLog($message, $level='info')
+    {
         Yii::log($message.' (file: '.$this->realpath.')', $level, 'app.extensions.CFile');
     }
 
@@ -117,11 +128,14 @@ class CFile extends CApplicationComponent
             $instance->_filepath = $filePath;
             $instance->realPath;
 
-            if ($instance->exists)
+            if ($instance->exists())
             {
                 $instance->pathInfo();
-                if ($greedy){
+                if ($greedy)
+                {
                     $instance->size;
+                    $instance->readable;
+                    $instance->writeable;
                     $instance->owner;
                     $instance->group;
                     $instance->permissions;
@@ -139,14 +153,14 @@ class CFile extends CApplicationComponent
      * Populates basic CFile properties (i.e. 'Dirname', 'Basename', etc.) using values
      * resolved by pathinfo() php function.
      */
-    private function pathInfo(){
+    private function pathInfo()
+    {
         $pathinfo = pathinfo($this->_realpath);
         $this->_dirname = $pathinfo['dirname'];
         $this->_basename = $pathinfo['basename'];
         $this->_filename = $pathinfo['filename'];
         $this->_extension = $pathinfo['extension'];
     }
-
 
     /**
      * Returns real file path figured by script (see {@link realPath}) on the basis of user supplied $_filepath.
@@ -171,7 +185,8 @@ class CFile extends CApplicationComponent
      * @param string $dir_separator Directory separator char (depends upon OS)
      * @return string Real file path
      */
-    private function realPath($currentPath, $dir_separator=DIRECTORY_SEPARATOR){
+    private function realPath($currentPath, $dir_separator=DIRECTORY_SEPARATOR)
+    {
 
         if (!strlen($currentPath))
             return $dir_separator;
@@ -182,13 +197,17 @@ class CFile extends CApplicationComponent
         if (!strncasecmp(PHP_OS, 'win', 3))
         {
             $currentPath = preg_replace('/[\\\\\/]/', $dir_separator, $currentPath);
-            if (preg_match('/([a-zA-Z]\:)(.*)/', $currentPath, $matches)) {
+            if (preg_match('/([a-zA-Z]\:)(.*)/', $currentPath, $matches))
+            {
                 $winDrive = $matches[1];
                 $currentPath = $matches[2];
-            } else {
+            }
+            else
+            {
                 $workingDir = getcwd();
                 $winDrive = substr($workingDir, 0, 2);
-                if ($currentPath{0} !== $dir_separator{0}) {
+                if ($currentPath{0} !== $dir_separator{0})
+                {
                     $currentPath = substr($workingDir, 3).$dir_separator.$currentPath;
                 }
             }
@@ -226,11 +245,40 @@ class CFile extends CApplicationComponent
      *
      * @return boolean 'True' if file exists, overwise 'false'
      */
-    public function getExists(){
+    public function getExists()
+    {
         if (!isset($this->_exists))
             $this->_exists = $this->exists();
 
         return $this->_exists;
+    }
+
+    /**
+     * Tests whether the current file is readable and returns boolean.
+     * If $_readable property is set, returned value is read from that property.
+     *
+     * @return boolean 'True' if file is readable, overwise 'false'
+     */
+    public function getReadable()
+    {
+        if (!isset($this->_readable))
+            $this->_readable = is_readable($this->_realpath);
+
+        return $this->_readable;
+    }
+
+    /**
+     * Tests whether the current file is readable and returns boolean.
+     * If $_writeable property is set, returned value is read from that property.
+     *
+     * @return boolean 'True' if file is writeable, overwise 'false'
+     */
+    public function getWriteable()
+    {
+        if (!isset($this->_writeable))
+            $this->_writeable = is_writable($this->_realpath);
+
+        return $this->_writeable;
     }
 
     /**
@@ -241,14 +289,14 @@ class CFile extends CApplicationComponent
      */
     private function exists()
     {
-        if (!isset($this->_exists))
+        if (file_exists($this->_realpath) && is_file($this->_realpath))
         {
-            if (file_exists($this->_realpath) && is_file($this->_realpath)){
-                Yii::trace("File availability test: ".$this->_realpath, 'app.extensions.CFile');
-                $this->_exists = true;
-            } else {
-                $this->_exists = false;
-            }
+            Yii::trace("File availability test: ".$this->_realpath, 'app.extensions.CFile');
+            $this->_exists = true;
+        }
+        else
+        {
+            $this->_exists = false;
         }
 
         if ($this->_exists)
@@ -256,6 +304,65 @@ class CFile extends CApplicationComponent
 
         $this->addLog('File not found');
         return false;
+    }
+
+    /**
+     * Creates empty file if the current file doesn't exist.
+     *
+     * @return mixed Updated current CFile object on success, 'false' on fail.
+     */
+    public function create()
+    {
+        if (!$this->_exists)
+        {
+            if ($this->open('w'))
+            {
+                $this->close();
+                return $this->set($this->_filepath);
+            }
+
+            $this->addLog('Unable to create empty file');
+            return false;
+        }
+        
+        $this->addLog('File creation failed. File already exists');
+        return false;
+    }
+
+    /**
+     * Opens (if not already opened) the current file using certain mode.
+     * See fopen() php function for more info.
+     *
+     * For now used only internally.
+     *
+     * @param string $mode Type of access required to the stream
+     * @return mixed Current CFile object on success, 'false' on fail.
+     */
+    private function open($mode)
+    {
+        if (is_null($this->_handle))
+        {
+            if ($this->_handle = fopen($this->_realpath, $mode))
+                return $this;
+
+            $this->addLog('Unable to open file using mode "'.$mode.'"');
+            return false;
+        }
+    }
+
+    /**
+     * Closes (if opened) the current file pointer.
+     * See fclose() php function for more info.
+     *
+     * For now used only internally.
+     */
+    private function close()
+    {
+        if (!is_null($this->_handle))
+        {
+            fclose($this->_handle);
+            $this->_handle = null;
+        }
     }
 
     /**
@@ -270,11 +377,12 @@ class CFile extends CApplicationComponent
     {
         if (!isset($this->_owner))
             $this->_owner = $this->exists()?fileowner($this->_realpath):null;
-                if ($getName != false)
-                {
-                    $this->_owner = posix_getpwuid($this->_owner);
-                    $this->_owner = $this->_owner['name'];
-                }
+            
+        if (function_exists('posix_getpwuid') && $getName != false)
+        {
+            $this->_owner = posix_getpwuid($this->_owner);
+            $this->_owner = $this->_owner['name'];
+        }
 
         return $this->_owner;
     }
@@ -291,11 +399,12 @@ class CFile extends CApplicationComponent
     {
         if (!isset($this->_group))
             $this->_group = $this->exists()?filegroup($this->_realpath):null;
-                if ($getName != false)
-                {
-                    $this->_group = posix_getgrgid($this->_group);
-                    $this->_group = $this->_group['name'];
-                }
+            
+        if (function_exists('posix_getgrgid') && $getName != false)
+        {
+            $this->_group = posix_getgrgid($this->_group);
+            $this->_group = $this->_group['name'];
+        }
 
         return $this->_group;
     }
@@ -342,7 +451,8 @@ class CFile extends CApplicationComponent
      * @param integer $precision Number of digits after the decimal point
      * @return string File size in human readable format
      */
-    private function formatFileSize($bytes, $precision=2) {
+    private function formatFileSize($bytes, $precision=2)
+    {
         $units = array('B', 'KB', 'MB', 'GB', 'TB');
 
         $bytes = max($bytes, 0);
@@ -355,7 +465,7 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns the time current file was last modified.
+     * Returns the current file last modified time.
      * Returned Unix timestamp could be passed to php date() function.
      *
      * @return integer Last modified time Unix timestamp (eg. '1213760802')
@@ -369,7 +479,7 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns current file extension from $_extension property set by {@link pathInfo}
+     * Returns the current file extension from $_extension property set by {@link pathInfo}
      * (eg. 'htm' for '/var/www/htdocs/files/myfile.htm').
      *
      * @return string Current file extension without the leading dot
@@ -380,7 +490,7 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns current file basename (file name plus extension) from $_basename property set by {@link pathInfo}
+     * Returns the current file basename (file name plus extension) from $_basename property set by {@link pathInfo}
      * (eg. 'myfile.htm' for '/var/www/htdocs/files/myfile.htm').
      *
      * @return string Current file basename
@@ -391,7 +501,7 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns current file name (without extension) from $_filename property set by {@link pathInfo}
+     * Returns the current file name (without extension) from $_filename property set by {@link pathInfo}
      * (eg. 'myfile' for '/var/www/htdocs/files/myfile.htm')
      *
      * @return string Current file name
@@ -402,7 +512,7 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns current file directory name (without final slash) from $_dirname property set by {@link pathInfo}
+     * Returns the current file directory name (without final slash) from $_dirname property set by {@link pathInfo}
      * (eg. '/var/www/htdocs/files' for '/var/www/htdocs/files/myfile.htm')
      *
      * @return string Current file name
@@ -413,7 +523,44 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Sets current file owner, updates $_owner property if success.
+     * Returns the current file contents (reads data).
+     *
+     * @return mixed The read data or 'false' on fail.
+     */
+    public function getContents()
+    {
+        if($this->_exists && $contents = file_get_contents($this->_realpath))
+        {
+            return $contents;
+        }
+
+        $this->addLog('Unable to get file contents');
+        return false;
+    }
+
+    /**
+     * Writes contents (data) into the current file.
+     *
+     * @param string $contents Contents to be written
+     * @param boolean $autocreate If 'true' file will be created automatically
+     * @return mixed Current CFile object on success, 'false' on fail.
+     */
+    public function setContents($contents=null, $autocreate=true)
+    {
+        if ($autocreate && !$this->_exists)
+            $this->create();
+
+        if($this->_exists && file_put_contents($this->_realpath, $contents))
+        {
+            return $this;
+        }
+
+        $this->addLog('Unable to put file contents');
+        return false;
+    }
+
+    /**
+     * Sets the current file owner, updates $_owner property if success.
      * For UNIX systems.
      *
      * @param mixed $owner New owner name or ID
@@ -432,7 +579,7 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Sets current file group, updates $_group property if success.
+     * Sets the current file group, updates $_group property if success.
      * For UNIX systems.
      *
      * @param mixed $group New group name or ID
@@ -451,7 +598,7 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Sets current file permissions, updates $_permissions property if success.
+     * Sets the current file permissions, updates $_permissions property if success.
      * For UNIX systems.
      *
      * @param string $permissions New file permissions in numeric (octal, i.e. '0755') format
@@ -476,7 +623,7 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Copies current file to specified destination.
+     * Copies the current file to specified destination.
      * Destination path supplied by user resolved to real destination path with {@link realPath}
      *
      * @param string $fileDest Destination path for the current file to be copied to
@@ -494,7 +641,7 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Renames/moves current file to specified destination.
+     * Renames/moves the current file to specified destination.
      * Destination path supplied by user resolved to real destination path with {@link realPath}
      *
      * @param string $fileDest Destination path for the current file to be renamed/moved to
@@ -526,7 +673,7 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Deletes current file.
+     * Deletes the current file.
      *
      * @return boolean 'True' if sucessfully deleted, 'false' on fail
      */
@@ -580,7 +727,7 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Determines the MIME type based on the extension current file.
+     * Determines the MIME type based on the extension of the current file.
      * This method will use a local map between extension name and MIME type.
      * @return string the MIME type. Null is returned if the MIME type cannot be determined.
      */
