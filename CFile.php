@@ -2,9 +2,7 @@
 /**
  * CFile provides common functions to manipulate files with Yii.
  *
- * @version 0.2
- *
- * @todo setters for $_basename, $_extension and $_filename properties (lazy rename)
+ * @version 0.3
  *
  * @author idle sign <idlesign@yandex.ru>
  * @link http://www.yiiframework.com/extension/cfile/
@@ -159,7 +157,10 @@ class CFile extends CApplicationComponent
         $this->_dirname = $pathinfo['dirname'];
         $this->_basename = $pathinfo['basename'];
         $this->_filename = $pathinfo['filename'];
-        $this->_extension = $pathinfo['extension'];
+        if (key_exists('extension', $pathinfo))
+            $this->_extension = $pathinfo['extension'];
+        else
+            $this->_extension = null;
     }
 
     /**
@@ -427,6 +428,7 @@ class CFile extends CApplicationComponent
      * Returns size of current file.
      * Returned value depends upon $formatPrecision parameter value.
      * If $_size property is set, returned value is read from that property.
+     * Uses privat method {@link size}.
      *
      * @param mixed $formatPrecision Number of digits after the decimal point or 'false'
      * @return mixed File size formatted (eg. '70.4 KB') or in bytes (eg. '72081') if $formatPrecision set to 'false'
@@ -434,13 +436,22 @@ class CFile extends CApplicationComponent
     public function getSize($formatPrecision=1)
     {
         if (!isset($this->_size))
-        {
-            $this->_size = $this->exists()?sprintf("%u", filesize($this->_realpath)):null;
-            if ($formatPrecision !== false)
-                $this->_size = $this->formatFileSize($this->_size, $formatPrecision);
-        }
+            $this->_size = $this->size($formatPrecision);
 
         return $this->_size;
+    }
+
+    /**
+     * Gets the current file size.
+     * This method is used internally. See {@link getSize} method params for detailed information
+     */
+    private function size($formatPrecision=1){
+        $size = $this->exists()?sprintf("%u", filesize($this->_realpath)):null;
+        
+        if ($formatPrecision !== false)
+            $size = $this->formatFileSize($size, $formatPrecision);
+
+        return $size;
     }
 
     /**
@@ -560,6 +571,77 @@ class CFile extends CApplicationComponent
     }
 
     /**
+     * Sets basename for the current file.
+     * Lazy wrapper for {@link rename}.
+     *
+     * @param string $basename New file basename (eg. 'mynewfile.txt')
+     * @return mixed Current CFile object on success, 'false' on fail.
+     */
+    public function setBasename($basename=false)
+    {
+        if($this->_exists && $basename!==false && $this->rename($basename))
+            return $this;
+
+        $this->addLog('Unable to set file basename "'.$basename.'"');
+        return false;
+    }
+
+    /**
+     * Sets the current file name.
+     * Lazy wrapper for {@link rename}.
+     *
+     * @param string $filename New file name (eg. 'mynewfile')
+     * @return mixed Current CFile object on success, 'false' on fail.
+     */
+    public function setFilename($filename=false)
+    {
+        if($this->_exists && $filename!==false &&
+                $this->rename(str_replace($this->filename, $filename, $this->basename)))
+            return $this;
+
+        $this->addLog('Unable to set file name "'.$filename.'"');
+        return false;
+    }
+
+    /**
+     * Sets the current file extension.
+     * If new extension is 'null' or 'false' current file extension is dropped.
+     * Lazy wrapper for {@link rename}.
+     *
+     * @param string $extension New file extension (eg. 'txt')
+     * @return mixed Current CFile object on success, 'false' on fail.
+     */
+    public function setExtension($extension=false)
+    {
+        if($this->_exists && $extension!==false)
+        {
+            $extension = trim($extension);
+
+            // drop current extension
+            if (is_null($extension) || $extension=='')
+            {
+                $newBaseName = $this->filename;
+            }
+            // apply new extension
+            else
+            {
+                $extension = ltrim($extension, '.');
+
+                if (is_null($this->extension))
+                    $newBaseName = $this->filename.'.'.$extension;
+                else
+                    $newBaseName = str_replace($this->extension, $extension, $this->basename);
+            }
+
+            if ($this->rename($newBaseName))
+                return $this;
+        }
+        
+        $this->addLog('Unable to set file extension "'.$extension.'"');
+        return false;
+    }
+
+    /**
      * Sets the current file owner, updates $_owner property if success.
      * For UNIX systems.
      *
@@ -623,17 +705,31 @@ class CFile extends CApplicationComponent
     }
 
     /**
+     * Resolves destination path for the current file.
+     * This method enables short calls for {@link copy} & {@link rename} methods
+     * (i.e. copy('mynewfile.htm') makes a copy of the current file in the same directory, named 'mynewfile.htm')
+     *
+     * @param string $fileDest Destination file name (with or w/o path) submitted by user
+     * @return string Resolved real destination path for the current file
+     */
+    private function resolveDestPath($fileDest)
+    {
+        if (strpos($fileDest, DIRECTORY_SEPARATOR)===false)
+            return $this->dirname.DIRECTORY_SEPARATOR.$fileDest;
+
+        return $this->realPath($fileDest);
+    }
+
+    /**
      * Copies the current file to specified destination.
-     * Destination path supplied by user resolved to real destination path with {@link realPath}
+     * Destination path supplied by user resolved to real destination path with {@link resolveDestPath}
      *
      * @param string $fileDest Destination path for the current file to be copied to
      * @return mixed New CFile object for newly created file on success, 'false' on fail.
      */
     public function copy($fileDest)
     {
-        $destRealPath = $this->realPath($fileDest);
-
-        if ($this->_exists && @copy($this->_realpath, $destRealPath))
+        if ($this->_exists && @copy($this->_realpath, $this->resolveDestPath($fileDest)))
             return $this->set($fileDest);
 
         $this->addLog('Unable to copy file');
@@ -642,14 +738,14 @@ class CFile extends CApplicationComponent
 
     /**
      * Renames/moves the current file to specified destination.
-     * Destination path supplied by user resolved to real destination path with {@link realPath}
+     * Destination path supplied by user resolved to real destination path with {@link resolveDestPath}
      *
      * @param string $fileDest Destination path for the current file to be renamed/moved to
      * @return mixed Updated current CFile object on success, 'false' on fail.
      */
     public function rename($fileDest)
     {
-        $destRealPath = $this->realPath($fileDest);
+        $destRealPath = $this->resolveDestPath($fileDest);
         
         if ($this->_exists && @rename($this->_realpath, $destRealPath))
         {
@@ -660,7 +756,7 @@ class CFile extends CApplicationComponent
             return $this;
         }
 
-        $this->addLog('Unable to rename/move file');
+        $this->addLog('Unable to rename/move file into "'.$destRealPath.'"');
         return false;
     }
 
@@ -686,6 +782,48 @@ class CFile extends CApplicationComponent
         }
 
         $this->addLog('Unable to delete file');
+        return false;
+    }
+
+    /**
+     * Sends the current file to browser as a download with real or faked file name.
+     * Browser caching is prevented.
+     *
+     * @param string $fakeName New filename (eg. 'myfileFakedName.htm')
+     * @return file File download
+     */
+    function download($fakeName=false){
+
+        if ($this->_exists && !headers_sent()){
+
+            $content_type = $this->mimeType;
+
+            if (!$content_type)
+                $content_type = "application/octet-stream";
+
+            if ($fakeName)
+                $filename = $fakeName;
+            else
+                $filename = $this->basename;
+
+            // disable browser caching
+            header('Cache-control: private');
+            header('Pragma: private');
+            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+
+            header('Content-Type: '.$content_type);
+            header('Content-Transfer-Encoding: binary');
+            header('Content-Length: '.$this->size(false));
+            header('Content-Disposition: attachment;filename="'.$filename.'"');
+
+            if ($contents = $this->contents)
+            {
+                echo $contents;
+                exit;
+            }
+        }
+        
+        $this->addLog('Unable to prepare file for download. Headers already sent or file doesn\'t not exist');
         return false;
     }
 
