@@ -1,14 +1,17 @@
 <?php
 /**
- * CFile provides common functions to manipulate files with Yii.
+ * CFile class file.
  *
- * @version 0.3
+ * CFile provides common methods to manipulate filesystem objects (files and
+ * directories) from under Yii Framework (http://www.yiiframework.com)
+ *
+ * @version 0.4
  *
  * @author idle sign <idlesign@yandex.ru>
  * @link http://www.yiiframework.com/extension/cfile/
+ * @copyright Copyright &copy; 2009 idle sign
  * @license LICENSE.txt
  */
-
 class CFile extends CApplicationComponent
 {
     /**
@@ -16,23 +19,31 @@ class CFile extends CApplicationComponent
      */
     private static $_instances = array();
     /**
-     * @var string file path submitted by user
+     * @var string filesystem object path submitted by user
      */
     private $_filepath;
     /**
-     * @var string real file path figured by script on the basis of $_filepath
+     * @var string real filesystem object path figured by script on the basis of $_filepath
      */
     private $_realpath;
     /**
-     * @var boolean 'true' if file described by $_realpath exists
+     * @var boolean 'true' if filesystem object described by $_realpath exists
      */
     private $_exists;
     /**
-     * @var boolean 'true' if file described by $_realpath is readable
+     * @var boolean 'true' if filesystem object described by $_realpath is a regular file
+     */
+    private $_isFile = false;
+    /**
+     * @var boolean 'true' if filesystem object described by $_realpath is a directory
+     */
+    private $_isDir = false;
+    /**
+     * @var boolean 'true' if filesystem object described by $_realpath is readable
      */
     private $_readable;
     /**
-     * @var boolean 'true' if file described by $_realpath writeable
+     * @var boolean 'true' if filesystem object described by $_realpath writeable
      */
     private $_writeable;
     /**
@@ -44,7 +55,7 @@ class CFile extends CApplicationComponent
      */
     private $_filename;
     /**
-     * @var string directory name of the file (eg. '/var/www/htdocs/files' for '/var/www/htdocs/files/myfile.htm')
+     * @var string directory name of the filesystem object (eg. '/var/www/htdocs/files' for '/var/www/htdocs/files/myfile.htm')
      */
     private $_dirname;
     /**
@@ -56,23 +67,27 @@ class CFile extends CApplicationComponent
      */
     private $_mimeType;
     /**
-     * @var integer the time the file was last modified (Unix timestamp eg. '1213760802')
+     * @var integer the time the filesystem object was last modified (Unix timestamp eg. '1213760802')
      */
     private $_timeModified;
     /**
-     * @var string file size formatted (eg. '70.4 KB') or in bytes (eg. '72081') see {@link getSize} parameters
+     * @var string filesystem object size formatted (eg. '70.4 KB') or in bytes (eg. '72081') see {@link getSize} parameters
      */
     private $_size;
     /**
-     * @var mixed file owner name (eg. 'idle') or in ID (eg. '1000') see {@link getOwner} parameters
+     * @var boolean filesystem object has contents flag
+     */
+    private $_isEmpty;
+    /**
+     * @var mixed filesystem object owner name (eg. 'idle') or in ID (eg. '1000') see {@link getOwner} parameters
      */
     private $_owner;
     /**
-     * @var mixed file group name (eg. 'apache') or in ID (eg. '127') see {@link getGroup} parameters
+     * @var mixed filesystem object group name (eg. 'apache') or in ID (eg. '127') see {@link getGroup} parameters
      */
     private $_group;
     /**
-     * @var string file permissions (considered octal eg. '0755')
+     * @var string filesystem object permissions (considered octal eg. '0755')
      */
     private $_permissions;
     /**
@@ -105,54 +120,68 @@ class CFile extends CApplicationComponent
      */
     private function addLog($message, $level='info')
     {
-        Yii::log($message.' (file: '.$this->realpath.')', $level, 'app.extensions.CFile');
+        Yii::log($message.' (obj: '.$this->realpath.')', $level, 'app.extensions.CFile');
     }
 
     /**
-     * Basic CFile method. Sets CFile object to work with specified file.
-     * Essentially file path supplied by user is resolved into real path (see {@link getRealPath}),
+     * Basic CFile method. Sets CFile object to work with specified filesytem object.
+     * Essentially path supplied by user is resolved into real path (see {@link getRealPath}),
      * all the other property getting methods should use that real path.
      *
      * @param string $filePath Path to the file specified by user, if not set exception is raised
      * @param boolean $greedy If true file properties (such as 'Size', 'Owner', 'Permission', etc.) would be autoloaded
-     * @return object CFile instance for the specified file
+     * @return object CFile instance for the specified filesystem object
      */
     public function set($filePath, $greedy=false)
     {
         if (trim($filePath)!='')
         {
             clearstatcache();
-            $instance = self::getInstance($filePath);
+            $realPath = self::realPath($filePath);
+            $instance = self::getInstance($realPath);
             $instance->_filepath = $filePath;
-            $instance->realPath;
+            $instance->_realpath = $realPath;
 
             if ($instance->exists())
             {
                 $instance->pathInfo();
+                $instance->readable;
+                $instance->writeable;
+                
                 if ($greedy)
                 {
+                    $instance->isempty;
                     $instance->size;
-                    $instance->readable;
-                    $instance->writeable;
                     $instance->owner;
                     $instance->group;
                     $instance->permissions;
                     $instance->timeModified;
-                    $instance->mimeType;
+                    if ($this->isFile)
+                        $instance->mimeType;
                 }
             }
             return $instance;
         }
 
-        throw new CException('Path to file is not specified');
+        throw new CException('Path to filesystem object is not specified');
     }
 
     /**
      * Populates basic CFile properties (i.e. 'Dirname', 'Basename', etc.) using values
      * resolved by pathinfo() php function.
+     * Detects filesystem object type (file, directory).
      */
     private function pathInfo()
     {
+        if (is_file($this->_realpath))
+        {
+            $this->_isFile = true;
+        }
+        elseif(is_dir($this->_realpath))
+        {
+            $this->_isDir = true;
+        }
+
         $pathinfo = pathinfo($this->_realpath);
         $this->_dirname = $pathinfo['dirname'];
         $this->_basename = $pathinfo['basename'];
@@ -164,7 +193,8 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns real file path figured by script (see {@link realPath}) on the basis of user supplied $_filepath.
+     * Returns real filesystem object path figured by script (see {@link realPath})
+     * on the basis of user supplied $_filepath.
      * If $_realpath property is set, returned value is read from that property.
      *
      * @param string $dir_separator Directory separator char (depends upon OS)
@@ -179,15 +209,16 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Base real file path resolving method.
-     * Returns real file path resolved from the supplied path.
+     * Base real filesystem object path resolving method.
+     * Returns real path resolved from the supplied path.
      *
-     * @param string $currentPath Path from which real file path should be resolved
+     * @param string $suppliedPath Path from which real filesystem object path should be resolved
      * @param string $dir_separator Directory separator char (depends upon OS)
      * @return string Real file path
      */
-    private function realPath($currentPath, $dir_separator=DIRECTORY_SEPARATOR)
+    private function realPath($suppliedPath, $dir_separator=DIRECTORY_SEPARATOR)
     {
+        $currentPath = $suppliedPath;
 
         if (!strlen($currentPath))
             return $dir_separator;
@@ -235,13 +266,15 @@ class CFile extends CApplicationComponent
         }
 
         $realpath = $winDrive.$dir_separator.implode($dir_separator, $pathsArr);
-        Yii::trace('User file "'.$this->_filepath.'" resolved into "'.$realpath.'"', 'app.extensions.CFile');
+
+        if ($currentPath != $suppliedPath)
+            Yii::trace('Path "'.$suppliedPath.'" resolved into "'.$realpath.'"', 'app.extensions.CFile');
 
         return $realpath;
     }
 
     /**
-     * Tests current file existance and returns boolean (see {@link exists}).
+     * Tests current filesystem object existance and returns boolean (see {@link exists}).
      * If $_exists property is set, returned value is read from that property.
      *
      * @return boolean 'True' if file exists, overwise 'false'
@@ -249,16 +282,59 @@ class CFile extends CApplicationComponent
     public function getExists()
     {
         if (!isset($this->_exists))
-            $this->_exists = $this->exists();
+            $this->exists();
 
         return $this->_exists;
     }
 
     /**
-     * Tests whether the current file is readable and returns boolean.
+     * Returns filesystem object type for the current file (see {@link pathInfo}).
+     * Tells whether filesystem object is a regular file.
+     *
+     * @return boolean 'True' if filesystem object is a regular file, overwise 'false'
+     */
+    public function getIsFile()
+    {
+        return $this->_isFile;
+    }
+
+    /**
+     * Returns filesystem object type for the current file (see {@link pathInfo}).
+     * Tells whether filesystem object is a directory.
+     *
+     * @return boolean 'True' if filesystem object is a directory, overwise 'false'
+     */
+    public function getIsDir()
+    {
+        return $this->_isDir;
+    }
+
+    /**
+     * Returns filesystem object has-contents flag.
+     * Directory considered empty if it doesn't contain descendants.
+     * File considered empty if its size is 0 bytes.
+     *
+     * @return boolean 'True' if file is a directory, overwise 'false'
+     */
+    public function getIsEmpty()
+    {
+        if (!isset($this->isEmpty))
+        {
+            if (($this->isFile && $this->size(false)==0) ||
+                (!$this->isFile && count($this->dirContents($this->_realpath))==0 ))
+                $this->_isEmpty = true;
+            else
+                $this->_isEmpty = false;
+        }
+        
+        return $this->_isEmpty;
+    }
+
+    /**
+     * Tests whether the current filesystem object is readable and returns boolean.
      * If $_readable property is set, returned value is read from that property.
      *
-     * @return boolean 'True' if file is readable, overwise 'false'
+     * @return boolean 'True' if filesystem object is readable, overwise 'false'
      */
     public function getReadable()
     {
@@ -269,10 +345,10 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Tests whether the current file is readable and returns boolean.
+     * Tests whether the current filesystem object is readable and returns boolean.
      * If $_writeable property is set, returned value is read from that property.
      *
-     * @return boolean 'True' if file is writeable, overwise 'false'
+     * @return boolean 'True' if filesystem object is writeable, overwise 'false'
      */
     public function getWriteable()
     {
@@ -283,16 +359,16 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Base file existance resolving method.
-     * Tests current file existance and returns boolean.
+     * Base filesystem object existance resolving method.
+     * Tests current filesystem object existance and returns boolean.
      *
-     * @return boolean 'True' if file exists, overwise 'false'
+     * @return boolean 'True' if filesystem object exists, overwise 'false'
      */
     private function exists()
     {
-        if (file_exists($this->_realpath) && is_file($this->_realpath))
+        if (file_exists($this->_realpath))
         {
-            Yii::trace("File availability test: ".$this->_realpath, 'app.extensions.CFile');
+            Yii::trace("Filesystem object availability test: ".$this->_realpath, 'app.extensions.CFile');
             $this->_exists = true;
         }
         else
@@ -303,23 +379,23 @@ class CFile extends CApplicationComponent
         if ($this->_exists)
             return true;
 
-        $this->addLog('File not found');
+        $this->addLog('Filesystem object not found');
         return false;
     }
 
     /**
      * Creates empty file if the current file doesn't exist.
      *
-     * @return mixed Updated current CFile object on success, 'false' on fail.
+     * @return mixed Updated the current CFile object on success, 'false' on fail.
      */
     public function create()
     {
-        if (!$this->_exists)
+        if (!$this->exists)
         {
             if ($this->open('w'))
             {
                 $this->close();
-                return $this->set($this->_filepath);
+                return $this->set($this->_realpath);
             }
 
             $this->addLog('Unable to create empty file');
@@ -327,6 +403,35 @@ class CFile extends CApplicationComponent
         }
         
         $this->addLog('File creation failed. File already exists');
+        return false;
+    }
+
+    /**
+     * Creates empty directory defined either through {@link set} or through the
+     * $directory parameter.
+     * 
+     *
+     * @param string $permissions Access permissions for the directory
+     * @param string $directory Parameter used to create directory other than
+     * supplied by {@link set} method of the CFile
+     * @return mixed Updated the current CFile object on success, 'false' on fail.
+     */
+    public function createDir($permissions=0754, $directory=null)
+    {
+        if (is_null($directory))
+            $dir = $this->_realpath;
+        else
+            $dir = $directory;
+
+        if (@mkdir($dir, $permissions, true))
+        {
+            if(!$directory)
+                return $this->set($dir);
+            else
+                return true;
+        }
+
+        $this->addLog('Unable to create empty directory "'.$dir.'"');
         return false;
     }
 
@@ -367,7 +472,7 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns owner of current file (UNIX systems).
+     * Returns owner of current filesystem object (UNIX systems).
      * Returned value depends upon $getName parameter value.
      * If $_owner property is set, returned value is read from that property.
      *
@@ -377,7 +482,7 @@ class CFile extends CApplicationComponent
     public function getOwner($getName=true)
     {
         if (!isset($this->_owner))
-            $this->_owner = $this->exists()?fileowner($this->_realpath):null;
+            $this->_owner = $this->exists?fileowner($this->_realpath):null;
             
         if (function_exists('posix_getpwuid') && $getName != false)
         {
@@ -389,7 +494,7 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns group of current file (UNIX systems).
+     * Returns group of current filesystem object (UNIX systems).
      * Returned value depends upon $getName parameter value.
      * If $_group property is set, returned value is read from that property.
      *
@@ -399,7 +504,7 @@ class CFile extends CApplicationComponent
     public function getGroup($getName=true)
     {
         if (!isset($this->_group))
-            $this->_group = $this->exists()?filegroup($this->_realpath):null;
+            $this->_group = $this->exists?filegroup($this->_realpath):null;
             
         if (function_exists('posix_getgrgid') && $getName != false)
         {
@@ -411,60 +516,86 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns permissions of current file (UNIX systems).
+     * Returns permissions of current filesystem object (UNIX systems).
      * If $_permissions property is set, returned value is read from that property.
      *
-     * @return string File permissions in octal format (i.e. '0755') 
+     * @return string Filesystem object permissions in octal format (i.e. '0755')
      */
     public function getPermissions()
     {
         if (!isset($this->_permissions))
-            $this->_permissions = $this->exists()?substr(sprintf('%o', fileperms($this->_realpath)), -4):null;
+            $this->_permissions = $this->exists?substr(sprintf('%o', fileperms($this->_realpath)), -4):null;
 
         return $this->_permissions;
     }
 
     /**
-     * Returns size of current file.
-     * Returned value depends upon $formatPrecision parameter value.
+     * Returns size of current filesystem object.
+     * Returned value depends upon $format parameter value.
      * If $_size property is set, returned value is read from that property.
      * Uses privat method {@link size}.
      *
-     * @param mixed $formatPrecision Number of digits after the decimal point or 'false'
-     * @return mixed File size formatted (eg. '70.4 KB') or in bytes (eg. '72081') if $formatPrecision set to 'false'
+     * @param mixed $format Number format (see {@link CNumberFormatter}) or 'false'
+     * @return mixed Filesystem object size formatted (eg. '70.4 KB') or in
+     * bytes (eg. '72081') if $format set to 'false'
      */
-    public function getSize($formatPrecision=1)
+    public function getSize($format='0.00')
     {
         if (!isset($this->_size))
-            $this->_size = $this->size($formatPrecision);
+            $this->_size = $this->size($format);
 
         return $this->_size;
     }
 
     /**
-     * Gets the current file size.
-     * This method is used internally. See {@link getSize} method params for detailed information
+     * Gets the current filesystem object size.
+     * Uses {@link dirSize} method for directory size calculation.
+     *
+     * This method is used internally.
+     * See {@link getSize} method params for detailed information.
      */
-    private function size($formatPrecision=1){
-        $size = $this->exists()?sprintf("%u", filesize($this->_realpath)):null;
+    private function size($format){
+
+        if ($this->isFile)
+            $size = $this->exists?sprintf("%u", filesize($this->_realpath)):null;
+        else
+            $size = $this->exists?sprintf("%u", $this->dirSize()):null;
         
-        if ($formatPrecision !== false)
-            $size = $this->formatFileSize($size, $formatPrecision);
+        if ($format !== false)
+            $size = $this->formatFileSize($size, $format);
 
         return $size;
     }
 
     /**
-     * Base file size format method.
+     * Calculates the current directory size recursively fetching sizes of
+     * all descendant files.
+     *
+     * This method is used internally and only for folders.
+     * See {@link getSize} method params for detailed information.
+     */
+    private function dirSize()
+    {       
+        $size = 0;
+        foreach ($this->dirContents($this->_realpath, true) as $item) {
+            if(is_file($item))
+                $size += sprintf("%u", filesize($item));
+        }
+
+        return $size;
+    }
+
+    /**
+     * Base filesystem object size format method.
      * Converts file size in bytes into human readable format (i.e. '70.4 KB')
      * 
-     * @param integer $bytes File size in bytes
-     * @param integer $precision Number of digits after the decimal point
-     * @return string File size in human readable format
+     * @param integer $bytes Filesystem object size in bytes
+     * @param integer $format Number format (see {@link CNumberFormatter})
+     * @return string Filesystem object size in human readable format
      */
-    private function formatFileSize($bytes, $precision=2)
+    private function formatFileSize($bytes, $format)
     {
-        $units = array('B', 'KB', 'MB', 'GB', 'TB');
+        $units = array('B', 'KB', 'MB', 'GB', 'TB', 'PB');
 
         $bytes = max($bytes, 0);
         $expo = floor(($bytes ? log($bytes) : 0) / log(1024));
@@ -472,7 +603,7 @@ class CFile extends CApplicationComponent
 
         $bytes /= pow(1024, $expo);
 
-        return round($bytes, $precision).' '.$units[$expo];
+        return Yii::app()->numberFormatter->format($format, $bytes).' '.$units[$expo];
     }
 
     /**
@@ -484,7 +615,7 @@ class CFile extends CApplicationComponent
     public function getTimeModified()
     {
         if (empty($this->_timeModified))
-            $this->_timeModified = $this->exists()?filemtime($this->_realpath):null;
+            $this->_timeModified = $this->exists?filemtime($this->_realpath):null;
 
         return $this->_timeModified;
     }
@@ -523,10 +654,11 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns the current file directory name (without final slash) from $_dirname property set by {@link pathInfo}
+     * Returns the current file directory name (without final slash) from
+     * $_dirname property set by {@link pathInfo}
      * (eg. '/var/www/htdocs/files' for '/var/www/htdocs/files/myfile.htm')
      *
-     * @return string Current file name
+     * @return string Current file directory name
      */
     public function getDirname()
     {
@@ -534,23 +666,71 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns the current file contents (reads data).
+     * Returns the current filesystem object contents.
+     * Reads data from filesystem object it is a regular file.
+     * List files and directories inside the specified path if filesystem object
+     * is a directory.
      *
      * @return mixed The read data or 'false' on fail.
      */
     public function getContents()
     {
-        if($this->_exists && $contents = file_get_contents($this->_realpath))
+        if($this->readable)
         {
-            return $contents;
-        }
+            if ($this->isFile)
+            {
+                if ($contents = file_get_contents($this->_realpath))
+                    return $contents;
+            }
+            else
+            {
+                if ($contents = $this->dirContents($this->_realpath))
+                    return $contents;
 
-        $this->addLog('Unable to get file contents');
+            }
+        }
+        $this->addLog('Unable to get filesystem object contents');
         return false;
     }
 
     /**
+     * Gets directory contents (descendant files and folders).
+     *
+     * @param string $directory Initial directory to get descendants for
+     * @param boolean $recursive If 'true' method would return all descendants
+     * recursively, otherwise just immediate descendants
+     * @return array Array of descendants filepaths
+     */
+    private function dirContents($directory=false, $recursive=false)
+    {
+        $descendants = array();
+        if (!$directory) $directory = $this->_realpath;
+
+        if ($contents = @scandir($directory.DIRECTORY_SEPARATOR))
+        {
+            foreach ($contents as $key=>$item)
+            {
+                $contents[$key] = $directory.DIRECTORY_SEPARATOR.$item;
+                if(!in_array($item, array(".", "..")))
+                {
+                    $descendants[] = $contents[$key];
+                    if (is_dir($contents[$key]))
+                        $descendants = array_merge($descendants, $this->dirContents($contents[$key], $recursive));
+                }
+            }
+        }
+        else
+        {
+            throw new CHttpException(500, 'Unable to get directory content for "'.$directory.DIRECTORY_SEPARATOR.'"');
+            return false;
+        }
+
+        return $descendants;
+    }
+
+    /**
      * Writes contents (data) into the current file.
+     * This method works only for files.
      *
      * @param string $contents Contents to be written
      * @param boolean $autocreate If 'true' file will be created automatically
@@ -558,91 +738,126 @@ class CFile extends CApplicationComponent
      */
     public function setContents($contents=null, $autocreate=true)
     {
-        if ($autocreate && !$this->_exists)
-            $this->create();
-
-        if($this->_exists && file_put_contents($this->_realpath, $contents))
+        if ($this->isFile)
         {
-            return $this;
-        }
+            if ($autocreate && !$this->exists)
+                $this->create();
 
-        $this->addLog('Unable to put file contents');
-        return false;
+            if($this->writeable && file_put_contents($this->_realpath, $contents)!==false)
+            {
+                return $this;
+            }
+
+            $this->addLog('Unable to put file contents');
+            return false;
+        }
+        else
+        {
+            $this->addLog('setContents() method is available only for files', 'warning');
+            return false;
+        }
     }
 
     /**
      * Sets basename for the current file.
      * Lazy wrapper for {@link rename}.
+     * This method works only for files.
      *
      * @param string $basename New file basename (eg. 'mynewfile.txt')
      * @return mixed Current CFile object on success, 'false' on fail.
      */
     public function setBasename($basename=false)
     {
-        if($this->_exists && $basename!==false && $this->rename($basename))
-            return $this;
+        if ($this->isFile)
+        {
+            if($this->writeable && $basename!==false && $this->rename($basename))
+                return $this;
 
-        $this->addLog('Unable to set file basename "'.$basename.'"');
-        return false;
+            $this->addLog('Unable to set file basename "'.$basename.'"');
+            return false;
+        }
+        else
+        {
+            $this->addLog('setBasename() method is available only for files', 'warning');
+            return false;
+        }
     }
 
     /**
      * Sets the current file name.
      * Lazy wrapper for {@link rename}.
+     * This method works only for files.
      *
      * @param string $filename New file name (eg. 'mynewfile')
      * @return mixed Current CFile object on success, 'false' on fail.
      */
     public function setFilename($filename=false)
     {
-        if($this->_exists && $filename!==false &&
-                $this->rename(str_replace($this->filename, $filename, $this->basename)))
-            return $this;
+        if ($this->isFile)
+        {
+            if($this->writeable && $filename!==false &&
+                    $this->rename(str_replace($this->filename, $filename, $this->basename)))
+                return $this;
 
-        $this->addLog('Unable to set file name "'.$filename.'"');
-        return false;
+            $this->addLog('Unable to set file name "'.$filename.'"');
+            return false;
+        }
+        else
+        {
+            $this->addLog('setFilename() method is available only for files', 'warning');
+            return false;
+        }
     }
 
     /**
      * Sets the current file extension.
      * If new extension is 'null' or 'false' current file extension is dropped.
      * Lazy wrapper for {@link rename}.
+     * This method works only for files.
      *
      * @param string $extension New file extension (eg. 'txt')
      * @return mixed Current CFile object on success, 'false' on fail.
      */
     public function setExtension($extension=false)
     {
-        if($this->_exists && $extension!==false)
+        if ($this->isFile)
         {
-            $extension = trim($extension);
-
-            // drop current extension
-            if (is_null($extension) || $extension=='')
+            if($this->writeable && $extension!==false)
             {
-                $newBaseName = $this->filename;
-            }
-            // apply new extension
-            else
-            {
-                $extension = ltrim($extension, '.');
+                $extension = trim($extension);
 
-                if (is_null($this->extension))
-                    $newBaseName = $this->filename.'.'.$extension;
+                // drop current extension
+                if (is_null($extension) || $extension=='')
+                {
+                    $newBaseName = $this->filename;
+                }
+                // apply new extension
                 else
-                    $newBaseName = str_replace($this->extension, $extension, $this->basename);
+                {
+                    $extension = ltrim($extension, '.');
+
+                    if (is_null($this->extension))
+                        $newBaseName = $this->filename.'.'.$extension;
+                    else
+                        $newBaseName = str_replace($this->extension, $extension, $this->basename);
+                }
+
+                if ($this->rename($newBaseName))
+                    return $this;
             }
 
-            if ($this->rename($newBaseName))
-                return $this;
+            $this->addLog('Unable to set file extension "'.$extension.'"');
+            return false;
         }
-        
-        $this->addLog('Unable to set file extension "'.$extension.'"');
-        return false;
+        else
+        {
+            $this->addLog('setExtension() method is available only for files', 'warning');
+            return false;
+        }
     }
 
     /**
-     * Sets the current file owner, updates $_owner property if success.
+     * Sets the current filesystem object owner, updates $_owner property on success.
      * For UNIX systems.
      *
      * @param mixed $owner New owner name or ID
@@ -650,18 +865,18 @@ class CFile extends CApplicationComponent
      */
     public function setOwner($owner)
     {
-        if($this->_exists && chown($this->_realpath, $owner))
+        if($this->exists && chown($this->_realpath, $owner))
         {
             $this->_owner = $owner;
             return $this;
         }
 
-        $this->addLog('Unable to set owner for file');
+        $this->addLog('Unable to set owner for filesystem object to "'.$owner.'"');
         return false;
     }
 
     /**
-     * Sets the current file group, updates $_group property if success.
+     * Sets the current filesystem object group, updates $_group property on success.
      * For UNIX systems.
      *
      * @param mixed $group New group name or ID
@@ -669,26 +884,28 @@ class CFile extends CApplicationComponent
      */
     public function setGroup($group)
     {
-        if($this->_exists && chgrp($this->_realpath, $group))
+        if($this->exists && chgrp($this->_realpath, $group))
         {
             $this->_group = $group;
             return $this;
         }
 
-        $this->addLog('Unable to set group for file');
+        $this->addLog('Unable to set group for filesystem object to "'.$group.'"');
         return false;
     }
 
     /**
-     * Sets the current file permissions, updates $_permissions property if success.
+     * Sets the current filesystem object permissions, updates $_permissions
+     * property on success.
      * For UNIX systems.
      *
-     * @param string $permissions New file permissions in numeric (octal, i.e. '0755') format
+     * @param string $permissions New filesystem object permissions in numeric
+     * (octal, i.e. '0755') format
      * @return mixed Current CFile object on success, 'false' on fail.
      */
     public function setPermissions($permissions)
     {
-        if ($this->_exists && is_numeric($permissions))
+        if ($this->exists && is_numeric($permissions))
         {
             // '755' normalize to octal '0755'
             $permissions = str_pad($permissions, 4, "0", STR_PAD_LEFT);
@@ -700,17 +917,19 @@ class CFile extends CApplicationComponent
             }
         }
 
-        $this->addLog('Unable to change permissions for file');
+        $this->addLog('Unable to change permissions for filesystem object to "'.$permissions.'"');
         return false;
     }
 
     /**
-     * Resolves destination path for the current file.
+     * Resolves destination path for the current filesystem object.
      * This method enables short calls for {@link copy} & {@link rename} methods
-     * (i.e. copy('mynewfile.htm') makes a copy of the current file in the same directory, named 'mynewfile.htm')
+     * (i.e. copy('mynewfile.htm') makes a copy of the current filesystem object
+     * in the same directory, named 'mynewfile.htm')
      *
-     * @param string $fileDest Destination file name (with or w/o path) submitted by user
-     * @return string Resolved real destination path for the current file
+     * @param string $fileDest Destination filesystem object name (with or w/o path)
+     * submitted by user
+     * @return string Resolved real destination path for the current filesystem object
      */
     private function resolveDestPath($fileDest)
     {
@@ -721,33 +940,62 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Copies the current file to specified destination.
-     * Destination path supplied by user resolved to real destination path with {@link resolveDestPath}
+     * Copies the current filesystem object to specified destination.
+     * Destination path supplied by user resolved to real destination path with
+     * {@link resolveDestPath}
      *
-     * @param string $fileDest Destination path for the current file to be copied to
-     * @return mixed New CFile object for newly created file on success, 'false' on fail.
+     * @param string $fileDest Destination path for the current filesystem object
+     * to be copied to
+     * @return mixed New CFile object for newly created filesystem object on
+     * success, 'false' on fail.
      */
     public function copy($fileDest)
     {
-        if ($this->_exists && @copy($this->_realpath, $this->resolveDestPath($fileDest)))
-            return $this->set($fileDest);
+        $destRealPath = $this->resolveDestPath($fileDest);
 
-        $this->addLog('Unable to copy file');
+        if ($this->isFile)
+        {
+            if ($this->readable && @copy($this->_realpath, $destRealPath))
+                return $this->set($destRealPath);
+        }
+        else
+        {
+            Yii::trace('Copying directory "'.$this->_realpath.'" to "'.$destRealPath.'"', 'app.extensions.CFile');
+            $dirContents = $this->dirContents($this->_realpath, true);
+            foreach ($dirContents as $item) {
+                $itemDest = $destRealPath.str_replace($this->_realpath, '', $item);
+
+                if(is_file($item))
+                {
+                    @copy($item, $itemDest);
+                }
+                elseif (is_dir($item))
+                {
+                    $this->createDir(0754, $itemDest);
+                }
+            }
+
+            return $this->set($destRealPath);
+        }
+
+        $this->addLog('Unable to copy filesystem object into "'.$destRealPath.'"');
         return false;
     }
 
     /**
-     * Renames/moves the current file to specified destination.
-     * Destination path supplied by user resolved to real destination path with {@link resolveDestPath}
+     * Renames/moves the current filesystem object to specified destination.
+     * Destination path supplied by user resolved to real destination path with
+     * {@link resolveDestPath}
      *
-     * @param string $fileDest Destination path for the current file to be renamed/moved to
+     * @param string $fileDest Destination path for the current filesystem object
+     * to be renamed/moved to
      * @return mixed Updated current CFile object on success, 'false' on fail.
      */
     public function rename($fileDest)
     {
         $destRealPath = $this->resolveDestPath($fileDest);
         
-        if ($this->_exists && @rename($this->_realpath, $destRealPath))
+        if ($this->writeable && @rename($this->_realpath, $destRealPath))
         {
             $this->_filepath = $fileDest;
             $this->_realpath = $destRealPath;
@@ -756,7 +1004,7 @@ class CFile extends CApplicationComponent
             return $this;
         }
 
-        $this->addLog('Unable to rename/move file into "'.$destRealPath.'"');
+        $this->addLog('Unable to rename/move filesystem object into "'.$destRealPath.'"');
         return false;
     }
 
@@ -769,62 +1017,121 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Deletes the current file.
+     * Purges (makes empty) the current filesystem object.
+     * If the current filesystem object is a file its contents set to ''.
+     * If the current filesystem object is a directory all its descendants are deleted.
      *
-     * @return boolean 'True' if sucessfully deleted, 'false' on fail
+     * @return mixed Current CFile object on success, 'false' on fail.
      */
-    public function delete()
+    public function purge($path=false)
     {
-        if ($this->_exists && @unlink($this->_realpath))
+        if (!$path) $path = $this->_realpath;
+
+        if ($this->isFile)
         {
-            $this->_exists = false;
+            if ($this->writeable)
+                return $this->contents='';
+        }
+        else
+        {
+            Yii::trace('Purging directory "'.$path.'"', 'app.extensions.CFile');
+            $dirContents = $this->dirContents($path, true);
+            foreach ($dirContents as $item) {
+                if(is_file($item))
+                {
+                    @unlink($item);
+                }
+                elseif (is_dir($item))
+                {
+                    $this->purge($item);   
+                    @rmdir($item);
+                }
+            }
+
+            // @todo need valid check here also
             return true;
         }
+    }
 
-        $this->addLog('Unable to delete file');
+    /**
+     * Deletes the current filesystem object.
+     * For folders purge parameter can be supplied.
+     *
+     * @param boolean $purge If 'true' folder would be deleted with all the descendants
+     * @return boolean 'True' if sucessfully deleted, 'false' on fail
+     */
+    public function delete($purge=true)
+    {
+        if ($this->writeable)
+        {
+            if (($this->isFile && @unlink($this->_realpath) ) ||
+                (!$this->isFile && ($purge?$this->purge():true) && rmdir($this->_realpath) ))
+            {
+                $this->_exists = $this->_readable = $this->_writeable = false;
+                return true;
+            }
+        }
+
+        $this->addLog('Unable to delete filesystem object');
         return false;
     }
 
     /**
      * Sends the current file to browser as a download with real or faked file name.
      * Browser caching is prevented.
+     * This method works only for files.
      *
      * @param string $fakeName New filename (eg. 'myfileFakedName.htm')
      * @return file File download
      */
-    function download($fakeName=false){
+    public function send($fakeName=false)
+    {
+        if ($this->isFile)
+        {
+            if ($this->readable && !headers_sent()){
 
-        if ($this->_exists && !headers_sent()){
+                $content_type = $this->mimeType;
 
-            $content_type = $this->mimeType;
+                if (!$content_type)
+                    $content_type = "application/octet-stream";
 
-            if (!$content_type)
-                $content_type = "application/octet-stream";
+                if ($fakeName)
+                    $filename = $fakeName;
+                else
+                    $filename = $this->basename;
 
-            if ($fakeName)
-                $filename = $fakeName;
-            else
-                $filename = $this->basename;
+                // disable browser caching
+                header('Cache-control: private');
+                header('Pragma: private');
+                header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
 
-            // disable browser caching
-            header('Cache-control: private');
-            header('Pragma: private');
-            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+                header('Content-Type: '.$content_type);
+                header('Content-Transfer-Encoding: binary');
+                header('Content-Length: '.$this->size(false));
+                header('Content-Disposition: attachment;filename="'.$filename.'"');
 
-            header('Content-Type: '.$content_type);
-            header('Content-Transfer-Encoding: binary');
-            header('Content-Length: '.$this->size(false));
-            header('Content-Disposition: attachment;filename="'.$filename.'"');
-
-            if ($contents = $this->contents)
-            {
-                echo $contents;
-                exit;
+                if ($contents = $this->contents)
+                {
+                    echo $contents;
+                    exit;
+                }
             }
+
+            $this->addLog('Unable to prepare file for download. Headers already sent or file doesn\'t not exist');
+            return false;
         }
-        
-        $this->addLog('Unable to prepare file for download. Headers already sent or file doesn\'t not exist');
-        return false;
+        else
+        {
+            $this->addLog('send() and download() methods are available only for files', 'warning');
+            return false;
+        }
+    }
+
+    /**
+     * Alias for {@link send}
+     */
+    function download($fakeName=false){
+        return $this->send($fakeName);
     }
 
     // Modified methods taken from Yii CFileHelper.php are listed below
@@ -840,46 +1147,66 @@ class CFile extends CApplicationComponent
      * <li>mime_content_type</li>
      * <li>{@link getMimeTypeByExtension}</li>
      * </ol>
+     *
+     * This method works only for files.
      * @return mixed the MIME type on success, 'false' on fail.
      */
     public function getMimeType()
     {
-        if ($this->_exists)
+        if ($this->isFile)
         {
-            if(function_exists('finfo_open'))
+            if ($this->readable)
             {
-                if(($info=@finfo_open(FILEINFO_MIME)) && ($result=finfo_file($info,$this->_realpath))!==false)
+                if(function_exists('finfo_open'))
+                {
+                    if(($info=@finfo_open(FILEINFO_MIME)) && ($result=finfo_file($info,$this->_realpath))!==false)
+                        return $result;
+                }
+
+                if(function_exists('mime_content_type') && ($result=@mime_content_type($this->_realpath))!==false)
                     return $result;
+
+                $this->_mimeType = $this->getMimeTypeByExtension($this->_realpath);
             }
+            if ($this->_mimeType)
+                return $this->_mimeType;
 
-            if(function_exists('mime_content_type') && ($result=@mime_content_type($this->_realpath))!==false)
-                return $result;
-
-            $this->_mimeType = $this->getMimeTypeByExtension($this->_realpath);
+            $this->addLog('Unable to get mime type for file');
+            return false;
         }
-        if ($this->_mimeType)
-            return $this->_mimeType;
-
-        $this->addLog('Unable to get mime type for file');
-        return false;
+        else
+        {
+            $this->addLog('getMimeType() method is available only for files', 'warning');
+            return false;
+        }
     }
 
     /**
      * Determines the MIME type based on the extension of the current file.
      * This method will use a local map between extension name and MIME type.
+     * This method works only for files.
+     *
      * @return string the MIME type. Null is returned if the MIME type cannot be determined.
      */
     public function getMimeTypeByExtension()
     {
-        Yii::trace('Trying to get MIME type for "'.$this->_realpath.'" from extension "'.$this->_extension.'"', 'app.extensions.CFile');
-        static $extensions;
-        if($extensions===null)
-            $extensions=require(Yii::getPathOfAlias('system.utils.mimeTypes').'.php');
-            
-        if(!empty($this->_extension) && isset($extensions[$this->_extension]))
-                return $extensions[$this->_extension];
+        if ($this->isFile)
+        {
+            Yii::trace('Trying to get MIME type for "'.$this->_realpath.'" from extension "'.$this->_extension.'"', 'app.extensions.CFile');
+            static $extensions;
+            if($extensions===null)
+                $extensions=require(Yii::getPathOfAlias('system.utils.mimeTypes').'.php');
 
-        return false;
+            if(!empty($this->_extension) && isset($extensions[$this->_extension]))
+                    return $extensions[$this->_extension];
+
+            return false;
+        }
+        else
+        {
+            $this->addLog('getMimeTypeByExtension() method is available only for files', 'warning');
+            return false;
+        }
     }
 
 }
