@@ -5,7 +5,7 @@
  * CFile provides common methods to manipulate filesystem objects (files and
  * directories) from under Yii Framework (http://www.yiiframework.com)
  *
- * @version 0.4
+ * @version 0.5
  *
  * @author idle sign <idlesign@yandex.ru>
  * @link http://www.yiiframework.com/extension/cfile/
@@ -38,6 +38,10 @@ class CFile extends CApplicationComponent
      * @var boolean 'true' if filesystem object described by $_realpath is a directory
      */
     private $_isDir = false;
+    /**
+     * @var boolean 'true' if file described by $_realpath is uploaded
+     */
+    private $_isUploaded = false;
     /**
      * @var boolean 'true' if filesystem object described by $_realpath is readable
      */
@@ -94,6 +98,10 @@ class CFile extends CApplicationComponent
      * @var resource file pointer resource (for {@link open} & {@link close})
      */
     private $_handle=null;
+    /**
+     * @var CUploadedFile object instance
+     */
+    private $_uploadedInstance=null;
 
 
     /**
@@ -124,9 +132,10 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Basic CFile method. Sets CFile object to work with specified filesytem object.
+     * Basic CFile method. Sets CFile object to work with specified filesystem object.
      * Essentially path supplied by user is resolved into real path (see {@link getRealPath}),
      * all the other property getting methods should use that real path.
+     * Uploaded files are supported through {@link CUploadedFile} Yii class.
      *
      * @param string $filePath Path to the file specified by user, if not set exception is raised
      * @param boolean $greedy If true file properties (such as 'Size', 'Owner', 'Permission', etc.) would be autoloaded
@@ -136,6 +145,17 @@ class CFile extends CApplicationComponent
     {
         if (trim($filePath)!='')
         {
+
+            if (strpos($filePath, '\\')===false && strpos($filePath, '/')===false)
+            {
+                $uploaded = CUploadedFile::getInstanceByName($filePath);
+                if ($uploaded)
+                {
+                    $filePath = $uploaded->getTempName();
+                    Yii::trace('File "'.$filePath.'" is identified as uploaded', 'app.extensions.CFile');
+                }
+            }
+
             clearstatcache();
             $realPath = self::realPath($filePath);
             $instance = self::getInstance($realPath);
@@ -144,6 +164,8 @@ class CFile extends CApplicationComponent
 
             if ($instance->exists())
             {
+                $instance->_uploadedInstance = $uploaded;
+
                 $instance->pathInfo();
                 $instance->readable;
                 $instance->writeable;
@@ -156,7 +178,7 @@ class CFile extends CApplicationComponent
                     $instance->group;
                     $instance->permissions;
                     $instance->timeModified;
-                    if ($this->isFile)
+                    if ($instance->isFile)
                         $instance->mimeType;
                 }
             }
@@ -177,12 +199,16 @@ class CFile extends CApplicationComponent
         {
             $this->_isFile = true;
         }
-        elseif(is_dir($this->_realpath))
+        elseif (is_dir($this->_realpath))
         {
             $this->_isDir = true;
         }
 
-        $pathinfo = pathinfo($this->_realpath);
+        if ($this->_uploadedInstance)
+            $this->_isUploaded = true;
+
+        $pathinfo = pathinfo($this->_isUploaded?$this->_uploadedInstance->getName():$this->_realpath);
+
         $this->_dirname = $pathinfo['dirname'];
         $this->_basename = $pathinfo['basename'];
         $this->_filename = $pathinfo['filename'];
@@ -310,6 +336,16 @@ class CFile extends CApplicationComponent
     }
 
     /**
+     * Tells whether file is uploaded through a web form.
+     *
+     * @return boolean 'True' if file is uploaded, overwise 'false'
+     */
+    public function getIsUploaded()
+    {
+        return $this->_isUploaded;
+    }
+
+    /**
      * Returns filesystem object has-contents flag.
      * Directory considered empty if it doesn't contain descendants.
      * File considered empty if its size is 0 bytes.
@@ -366,9 +402,10 @@ class CFile extends CApplicationComponent
      */
     private function exists()
     {
+        Yii::trace('Filesystem object availability test: '.$this->_realpath, 'app.extensions.CFile');
+
         if (file_exists($this->_realpath))
         {
-            Yii::trace("Filesystem object availability test: ".$this->_realpath, 'app.extensions.CFile');
             $this->_exists = true;
         }
         else
@@ -667,13 +704,14 @@ class CFile extends CApplicationComponent
 
     /**
      * Returns the current filesystem object contents.
-     * Reads data from filesystem object it is a regular file.
+     * Reads data from filesystem object if it is a regular file.
      * List files and directories inside the specified path if filesystem object
      * is a directory.
      *
+     * @param boolean $recursive If 'true' method would return all descendants
      * @return mixed The read data or 'false' on fail.
      */
-    public function getContents()
+    public function getContents($recursive=false)
     {
         if($this->readable)
         {
@@ -684,7 +722,7 @@ class CFile extends CApplicationComponent
             }
             else
             {
-                if ($contents = $this->dirContents($this->_realpath))
+                if ($contents = $this->dirContents($this->_realpath, $recursive))
                     return $contents;
 
             }
@@ -714,7 +752,7 @@ class CFile extends CApplicationComponent
                 if(!in_array($item, array(".", "..")))
                 {
                     $descendants[] = $contents[$key];
-                    if (is_dir($contents[$key]))
+                    if (is_dir($contents[$key]) && $recursive)
                         $descendants = array_merge($descendants, $this->dirContents($contents[$key], $recursive));
                 }
             }
@@ -753,7 +791,7 @@ class CFile extends CApplicationComponent
         }
         else
         {
-            $this->addLog('setContents() method is available only for files', 'warning');
+            $this->addLog(__METHOD__.' method is available only for files', 'warning');
             return false;
         }
     }
@@ -770,17 +808,21 @@ class CFile extends CApplicationComponent
     {
         if ($this->isFile)
         {
+            if ($this->isUploaded)
+            {
+                $this->addLog(__METHOD__.' method is unavailable for uploaded files. Please copy/move uploaded file from temporary directory', 'warning');
+                return false;
+            }
+
             if($this->writeable && $basename!==false && $this->rename($basename))
                 return $this;
 
             $this->addLog('Unable to set file basename "'.$basename.'"');
             return false;
         }
-        else
-        {
-            $this->addLog('setBasename() method is available only for files', 'warning');
-            return false;
-        }
+        
+        $this->addLog(__METHOD__.' method is available only for files', 'warning');
+        return false;
     }
 
     /**
@@ -795,6 +837,12 @@ class CFile extends CApplicationComponent
     {
         if ($this->isFile)
         {
+            if ($this->isUploaded)
+            {
+                $this->addLog(__METHOD__.' method is unavailable for uploaded files. Please copy/move uploaded file from temporary directory', 'warning');
+                return false;
+            }
+
             if($this->writeable && $filename!==false &&
                     $this->rename(str_replace($this->filename, $filename, $this->basename)))
                 return $this;
@@ -802,11 +850,9 @@ class CFile extends CApplicationComponent
             $this->addLog('Unable to set file name "'.$filename.'"');
             return false;
         }
-        else
-        {
-            $this->addLog('setFilename() method is available only for files', 'warning');
-            return false;
-        }
+
+        $this->addLog(__METHOD__.' method is available only for files', 'warning');
+        return false;
     }
 
     /**
@@ -822,6 +868,12 @@ class CFile extends CApplicationComponent
     {
         if ($this->isFile)
         {
+            if ($this->isUploaded)
+            {
+                $this->addLog(__METHOD__.' method is unavailable for uploaded files. Please copy/move uploaded file from temporary directory', 'warning');
+                return false;
+            }
+
             if($this->writeable && $extension!==false)
             {
                 $extension = trim($extension);
@@ -849,11 +901,9 @@ class CFile extends CApplicationComponent
             $this->addLog('Unable to set file extension "'.$extension.'"');
             return false;
         }
-        else
-        {
-            $this->addLog('setExtension() method is available only for files', 'warning');
-            return false;
-        }
+
+        $this->addLog(__METHOD__.' method is available only for files', 'warning');
+        return false;
     }
 
     /**
@@ -1153,23 +1203,29 @@ class CFile extends CApplicationComponent
      */
     public function getMimeType()
     {
+        if ($this->_mimeType)
+            return $this->_mimeType;
+
         if ($this->isFile)
         {
             if ($this->readable)
             {
-                if(function_exists('finfo_open'))
+
+                if ($this->_isUploaded)
+                    return $this->_mimeType = $this->_uploadedInstance->getType();
+
+                if (function_exists('finfo_open'))
                 {
                     if(($info=@finfo_open(FILEINFO_MIME)) && ($result=finfo_file($info,$this->_realpath))!==false)
-                        return $result;
+                        return $this->_mimeType = $result;
                 }
 
                 if(function_exists('mime_content_type') && ($result=@mime_content_type($this->_realpath))!==false)
-                    return $result;
+                        return $this->_mimeType = $result;
 
-                $this->_mimeType = $this->getMimeTypeByExtension($this->_realpath);
+                return $this->_mimeType = $this->getMimeTypeByExtension($this->_realpath);
+
             }
-            if ($this->_mimeType)
-                return $this->_mimeType;
 
             $this->addLog('Unable to get mime type for file');
             return false;
@@ -1204,7 +1260,7 @@ class CFile extends CApplicationComponent
         }
         else
         {
-            $this->addLog('getMimeTypeByExtension() method is available only for files', 'warning');
+            $this->addLog(__METHOD__.' method is available only for files', 'warning');
             return false;
         }
     }
