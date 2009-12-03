@@ -5,7 +5,7 @@
  * CFile provides common methods to manipulate filesystem objects (files and
  * directories) from under Yii Framework (http://www.yiiframework.com)
  *
- * @version 0.5
+ * @version 0.5.1
  *
  * @author idle sign <idlesign@yandex.ru>
  * @link http://www.yiiframework.com/extension/cfile/
@@ -145,7 +145,8 @@ class CFile extends CApplicationComponent
     {
         if (trim($filePath)!='')
         {
-
+            $uploaded = null;
+            
             if (strpos($filePath, '\\')===false && strpos($filePath, '/')===false)
             {
                 $uploaded = CUploadedFile::getInstanceByName($filePath);
