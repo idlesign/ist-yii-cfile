@@ -5,7 +5,7 @@
  * CFile provides common methods to manipulate filesystem objects (files and
  * directories) from under Yii Framework (http://www.yiiframework.com)
  *
- * @version 0.5.1
+ * @version 0.6
  *
  * @author idle sign <idlesign@yandex.ru>
  * @link http://www.yiiframework.com/extension/cfile/
@@ -23,7 +23,8 @@ class CFile extends CApplicationComponent
      */
     private $_filepath;
     /**
-     * @var string real filesystem object path figured by script on the basis of $_filepath
+     * @var string real filesystem object path figured by script on the basis
+     * of $_filepath
      */
     private $_realpath;
     /**
@@ -31,11 +32,13 @@ class CFile extends CApplicationComponent
      */
     private $_exists;
     /**
-     * @var boolean 'true' if filesystem object described by $_realpath is a regular file
+     * @var boolean 'true' if filesystem object described by $_realpath is
+     * a regular file
      */
     private $_isFile = false;
     /**
-     * @var boolean 'true' if filesystem object described by $_realpath is a directory
+     * @var boolean 'true' if filesystem object described by $_realpath is
+     * a directory
      */
     private $_isDir = false;
     /**
@@ -43,39 +46,48 @@ class CFile extends CApplicationComponent
      */
     private $_isUploaded = false;
     /**
-     * @var boolean 'true' if filesystem object described by $_realpath is readable
+     * @var boolean 'true' if filesystem object described by $_realpath is
+     * readable
      */
     private $_readable;
     /**
-     * @var boolean 'true' if filesystem object described by $_realpath writeable
+     * @var boolean 'true' if filesystem object described by $_realpath
+     * writeable
      */
     private $_writeable;
     /**
-     * @var string basename of the file (eg. 'myfile.htm' for '/var/www/htdocs/files/myfile.htm')
+     * @var string basename of the file (eg. 'myfile.htm'
+     * for '/var/www/htdocs/files/myfile.htm')
      */
     private $_basename;
     /**
-     * @var string name of the file (eg. 'myfile' for '/var/www/htdocs/files/myfile.htm')
+     * @var string name of the file (eg. 'myfile'
+     * for '/var/www/htdocs/files/myfile.htm')
      */
     private $_filename;
     /**
-     * @var string directory name of the filesystem object (eg. '/var/www/htdocs/files' for '/var/www/htdocs/files/myfile.htm')
+     * @var string directory name of the filesystem object
+     * (eg. '/var/www/htdocs/files' for '/var/www/htdocs/files/myfile.htm')
      */
     private $_dirname;
     /**
-     * @var string file extension(eg. 'htm' for '/var/www/htdocs/files/myfile.htm')
+     * @var string file extension(eg. 'htm'
+     * for '/var/www/htdocs/files/myfile.htm')
      */
     private $_extension;
     /**
-     * @var string file extension(eg. 'text/html' for '/var/www/htdocs/files/myfile.htm')
+     * @var string file extension(eg. 'text/html'
+     * for '/var/www/htdocs/files/myfile.htm')
      */
     private $_mimeType;
     /**
-     * @var integer the time the filesystem object was last modified (Unix timestamp eg. '1213760802')
+     * @var integer the time the filesystem object was last modified
+     * (Unix timestamp eg. '1213760802')
      */
     private $_timeModified;
     /**
-     * @var string filesystem object size formatted (eg. '70.4 KB') or in bytes (eg. '72081') see {@link getSize} parameters
+     * @var string filesystem object size formatted (eg. '70.4 KB') or
+     * in bytes (eg. '72081') see {@link getSize} parameters
      */
     private $_size;
     /**
@@ -83,11 +95,13 @@ class CFile extends CApplicationComponent
      */
     private $_isEmpty;
     /**
-     * @var mixed filesystem object owner name (eg. 'idle') or in ID (eg. '1000') see {@link getOwner} parameters
+     * @var mixed filesystem object owner name (eg. 'idle') or
+     * in ID (eg. '1000') see {@link getOwner} parameters
      */
     private $_owner;
     /**
-     * @var mixed filesystem object group name (eg. 'apache') or in ID (eg. '127') see {@link getGroup} parameters
+     * @var mixed filesystem object group name (eg. 'apache') or
+     * in ID (eg. '127') see {@link getGroup} parameters
      */
     private $_group;
     /**
@@ -123,22 +137,27 @@ class CFile extends CApplicationComponent
      * Logs a message.
      *
      * @param string $message Message to be logged
-     * @param string $level Level of the message (e.g. 'trace', 'warning', 'error', 'info', see
-     * CLogger constants definitions)
+     * @param string $level Level of the message (e.g. 'trace', 'warning',
+     * 'error', 'info', see CLogger constants definitions)
      */
     private function addLog($message, $level='info')
     {
-        Yii::log($message.' (obj: '.$this->realpath.')', $level, 'app.extensions.CFile');
+        Yii::log($message.' (obj: '.$this->realpath.')', $level, 'ext.file');
     }
 
     /**
-     * Basic CFile method. Sets CFile object to work with specified filesystem object.
-     * Essentially path supplied by user is resolved into real path (see {@link getRealPath}),
-     * all the other property getting methods should use that real path.
+     * Basic CFile method. Sets CFile object to work with specified filesystem
+     * object.
+     * Essentially path supplied by user is resolved into real path (see
+     * {@link getRealPath}), all the other property getting methods should use
+     * that real path.
      * Uploaded files are supported through {@link CUploadedFile} Yii class.
+     * Path aliases are supported through {@link getPathOfAlias} Yii method.
      *
-     * @param string $filePath Path to the file specified by user, if not set exception is raised
-     * @param boolean $greedy If true file properties (such as 'Size', 'Owner', 'Permission', etc.) would be autoloaded
+     * @param string $filePath Path to the file specified by user, if not set
+     * exception is raised
+     * @param boolean $greedy If true file properties (such as 'Size', 'Owner',
+     * 'Permission', etc.) would be autoloaded
      * @return object CFile instance for the specified filesystem object
      */
     public function set($filePath, $greedy=false)
@@ -153,7 +172,11 @@ class CFile extends CApplicationComponent
                 if ($uploaded)
                 {
                     $filePath = $uploaded->getTempName();
-                    Yii::trace('File "'.$filePath.'" is identified as uploaded', 'app.extensions.CFile');
+                    Yii::trace('File "'.$filePath.'" is identified as uploaded', 'ext.file');
+
+                } elseif ($pathOfAlias = YiiBase::getPathOfAlias($filePath)) {
+                    Yii::trace('The string supplied to '.__METHOD__.' method - "'.$filePath.'" is identified as the alias to "'.$pathOfAlias.'"', 'ext.file');
+                    $filePath = $pathOfAlias;
                 }
             }
 
@@ -186,12 +209,12 @@ class CFile extends CApplicationComponent
             return $instance;
         }
 
-        throw new CException('Path to filesystem object is not specified');
+        throw new CException('Path to filesystem object is not specified within '.__METHOD__.' method');
     }
 
     /**
-     * Populates basic CFile properties (i.e. 'Dirname', 'Basename', etc.) using values
-     * resolved by pathinfo() php function.
+     * Populates basic CFile properties (i.e. 'Dirname', 'Basename', etc.)
+     * using values resolved by pathinfo() php function.
      * Detects filesystem object type (file, directory).
      */
     private function pathInfo()
@@ -220,8 +243,8 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns real filesystem object path figured by script (see {@link realPath})
-     * on the basis of user supplied $_filepath.
+     * Returns real filesystem object path figured by script
+     * (see {@link realPath}) on the basis of user supplied $_filepath.
      * If $_realpath property is set, returned value is read from that property.
      *
      * @param string $dir_separator Directory separator char (depends upon OS)
@@ -239,7 +262,8 @@ class CFile extends CApplicationComponent
      * Base real filesystem object path resolving method.
      * Returns real path resolved from the supplied path.
      *
-     * @param string $suppliedPath Path from which real filesystem object path should be resolved
+     * @param string $suppliedPath Path from which real filesystem object path
+     * should be resolved
      * @param string $dir_separator Directory separator char (depends upon OS)
      * @return string Real file path
      */
@@ -295,13 +319,14 @@ class CFile extends CApplicationComponent
         $realpath = $winDrive.$dir_separator.implode($dir_separator, $pathsArr);
 
         if ($currentPath != $suppliedPath)
-            Yii::trace('Path "'.$suppliedPath.'" resolved into "'.$realpath.'"', 'app.extensions.CFile');
+            Yii::trace('Path "'.$suppliedPath.'" resolved into "'.$realpath.'"', 'ext.file');
 
         return $realpath;
     }
 
     /**
-     * Tests current filesystem object existance and returns boolean (see {@link exists}).
+     * Tests current filesystem object existance and returns boolean
+     * (see {@link exists}).
      * If $_exists property is set, returned value is read from that property.
      *
      * @return boolean 'True' if file exists, overwise 'false'
@@ -315,10 +340,12 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns filesystem object type for the current file (see {@link pathInfo}).
+     * Returns filesystem object type for the current file
+     * (see {@link pathInfo}).
      * Tells whether filesystem object is a regular file.
      *
-     * @return boolean 'True' if filesystem object is a regular file, overwise 'false'
+     * @return boolean 'True' if filesystem object is a regular file,
+     * overwise 'false'
      */
     public function getIsFile()
     {
@@ -326,10 +353,12 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns filesystem object type for the current file (see {@link pathInfo}).
+     * Returns filesystem object type for the current file
+     * (see {@link pathInfo}).
      * Tells whether filesystem object is a directory.
      *
-     * @return boolean 'True' if filesystem object is a directory, overwise 'false'
+     * @return boolean 'True' if filesystem object is a directory,
+     * overwise 'false'
      */
     public function getIsDir()
     {
@@ -368,7 +397,8 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Tests whether the current filesystem object is readable and returns boolean.
+     * Tests whether the current filesystem object is readable and returns
+     * boolean.
      * If $_readable property is set, returned value is read from that property.
      *
      * @return boolean 'True' if filesystem object is readable, overwise 'false'
@@ -382,10 +412,13 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Tests whether the current filesystem object is readable and returns boolean.
-     * If $_writeable property is set, returned value is read from that property.
+     * Tests whether the current filesystem object is readable and returns
+     * boolean.
+     * If $_writeable property is set, returned value is read from that
+     * property.
      *
-     * @return boolean 'True' if filesystem object is writeable, overwise 'false'
+     * @return boolean 'True' if filesystem object is writeable,
+     * overwise 'false'
      */
     public function getWriteable()
     {
@@ -403,7 +436,7 @@ class CFile extends CApplicationComponent
      */
     private function exists()
     {
-        Yii::trace('Filesystem object availability test: '.$this->_realpath, 'app.extensions.CFile');
+        Yii::trace('Filesystem object availability test: '.$this->_realpath, 'ext.file');
 
         if (file_exists($this->_realpath))
         {
@@ -424,7 +457,8 @@ class CFile extends CApplicationComponent
     /**
      * Creates empty file if the current file doesn't exist.
      *
-     * @return mixed Updated the current CFile object on success, 'false' on fail.
+     * @return mixed Updated the current CFile object on success, 'false'
+     * on fail.
      */
     public function create()
     {
@@ -452,7 +486,8 @@ class CFile extends CApplicationComponent
      * @param string $permissions Access permissions for the directory
      * @param string $directory Parameter used to create directory other than
      * supplied by {@link set} method of the CFile
-     * @return mixed Updated the current CFile object on success, 'false' on fail.
+     * @return mixed Updated the current CFile object on success, 'false'
+     * on fail.
      */
     public function createDir($permissions=0754, $directory=null)
     {
@@ -514,7 +549,8 @@ class CFile extends CApplicationComponent
      * Returned value depends upon $getName parameter value.
      * If $_owner property is set, returned value is read from that property.
      *
-     * @param boolean $getName Defaults to 'true', meaning that owner name instead of ID should be returned.
+     * @param boolean $getName Defaults to 'true', meaning that owner name
+     * instead of ID should be returned.
      * @return mixed Owner name, or ID if $getName set to 'false'
      */
     public function getOwner($getName=true)
@@ -536,7 +572,8 @@ class CFile extends CApplicationComponent
      * Returned value depends upon $getName parameter value.
      * If $_group property is set, returned value is read from that property.
      *
-     * @param boolean $getName Defaults to 'true', meaning that group name instead of ID should be returned.
+     * @param boolean $getName Defaults to 'true', meaning that group name
+     * instead of ID should be returned.
      * @return mixed Group name, or ID if $getName set to 'false'
      */
     public function getGroup($getName=true)
@@ -555,7 +592,8 @@ class CFile extends CApplicationComponent
 
     /**
      * Returns permissions of current filesystem object (UNIX systems).
-     * If $_permissions property is set, returned value is read from that property.
+     * If $_permissions property is set, returned value is read from that
+     * property.
      *
      * @return string Filesystem object permissions in octal format (i.e. '0755')
      */
@@ -573,7 +611,8 @@ class CFile extends CApplicationComponent
      * If $_size property is set, returned value is read from that property.
      * Uses privat method {@link size}.
      *
-     * @param mixed $format Number format (see {@link CNumberFormatter}) or 'false'
+     * @param mixed $format Number format (see {@link CNumberFormatter})
+     * or 'false'
      * @return mixed Filesystem object size formatted (eg. '70.4 KB') or in
      * bytes (eg. '72081') if $format set to 'false'
      */
@@ -659,8 +698,8 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns the current file extension from $_extension property set by {@link pathInfo}
-     * (eg. 'htm' for '/var/www/htdocs/files/myfile.htm').
+     * Returns the current file extension from $_extension property set
+     * by {@link pathInfo} (eg. 'htm' for '/var/www/htdocs/files/myfile.htm').
      *
      * @return string Current file extension without the leading dot
      */
@@ -670,7 +709,8 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns the current file basename (file name plus extension) from $_basename property set by {@link pathInfo}
+     * Returns the current file basename (file name plus extension) from
+     * $_basename property set by {@link pathInfo}
      * (eg. 'myfile.htm' for '/var/www/htdocs/files/myfile.htm').
      *
      * @return string Current file basename
@@ -681,7 +721,8 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Returns the current file name (without extension) from $_filename property set by {@link pathInfo}
+     * Returns the current file name (without extension) from $_filename
+     * property set by {@link pathInfo}
      * (eg. 'myfile' for '/var/www/htdocs/files/myfile.htm')
      *
      * @return string Current file name
@@ -709,10 +750,13 @@ class CFile extends CApplicationComponent
      * List files and directories inside the specified path if filesystem object
      * is a directory.
      *
-     * @param boolean $recursive If 'true' method would return all descendants
+     * @param boolean $recursive If 'true' method would return all directory
+     * descendants
+     * @param string $filter Filter to be applied to all directory descendants.
+     * Could be a string, or an array of strings (perl regexp supported).
      * @return mixed The read data or 'false' on fail.
      */
-    public function getContents($recursive=false)
+    public function getContents($recursive=false, $filter=null)
     {
         if($this->readable)
         {
@@ -723,12 +767,12 @@ class CFile extends CApplicationComponent
             }
             else
             {
-                if ($contents = $this->dirContents($this->_realpath, $recursive))
+                if ($contents = $this->dirContents($this->_realpath, $recursive, $filter))
                     return $contents;
 
             }
         }
-        $this->addLog('Unable to get filesystem object contents');
+        $this->addLog('Unable to get filesystem object contents'.($filter!==null?' *using supplied filter*':''));
         return false;
     }
 
@@ -738,12 +782,27 @@ class CFile extends CApplicationComponent
      * @param string $directory Initial directory to get descendants for
      * @param boolean $recursive If 'true' method would return all descendants
      * recursively, otherwise just immediate descendants
+     * @param string $filter Filter to be applied to all directory descendants.
+     * Could be a string, or an array of strings (perl regexp supported).
+     * See {@link filterPassed} method for further information on filters.
      * @return array Array of descendants filepaths
      */
-    private function dirContents($directory=false, $recursive=false)
+    private function dirContents($directory=false, $recursive=false, $filter=null)
     {
         $descendants = array();
         if (!$directory) $directory = $this->_realpath;
+
+        if ($filter!==null)
+        {
+            if (is_string($filter))
+                $filter = array($filter);
+
+            foreach ($filter as $key=>$rule)
+            {
+                if ($rule[0]!='/')
+                    $filter[$key] = ltrim($rule, '.');
+            }
+        }
 
         if ($contents = @scandir($directory.DIRECTORY_SEPARATOR))
         {
@@ -752,19 +811,59 @@ class CFile extends CApplicationComponent
                 $contents[$key] = $directory.DIRECTORY_SEPARATOR.$item;
                 if(!in_array($item, array(".", "..")))
                 {
-                    $descendants[] = $contents[$key];
+                    if ($this->filterPassed($contents[$key], $filter))
+                        $descendants[] = $contents[$key];
+
                     if (is_dir($contents[$key]) && $recursive)
-                        $descendants = array_merge($descendants, $this->dirContents($contents[$key], $recursive));
+                        $descendants = array_merge($descendants, $this->dirContents($contents[$key], $recursive, $filter));
                 }
             }
         }
         else
         {
-            throw new CHttpException(500, 'Unable to get directory content for "'.$directory.DIRECTORY_SEPARATOR.'"');
+            throw new CHttpException(500, 'Unable to get directory contents for "'.$directory.DIRECTORY_SEPARATOR.'"');
             return false;
         }
 
         return $descendants;
+    }
+
+    /**
+     * Applies an array of filter rules to the string representing filepath.
+     * Used internally by {@link dirContents} method.
+     *
+     * @param string $str String representing filepath to be filtered
+     * @param array $filter An array of filter rules, where each rule is a
+     * string, supposing that the string starting with '/' is a regular
+     * expression. Any other string reated as an extension part of the
+     * given filepath (eg. file extension)
+     * @return boolean Returns 'true' if the supplied string matched one of
+     * the filter rules.
+     */
+    private function filterPassed($str, $filter)
+    {
+        $passed = false;
+
+        if ($filter!==null)
+        {
+            foreach ($filter as $rule)
+            {
+                if ($rule[0]!='/')
+                {
+                    $rule = '.'.$rule;
+                    $passed = (bool)substr_count($str, $rule, strlen($str)-strlen($rule));
+                }
+                else
+                    $passed = (bool)preg_match($rule, $str);
+
+                if ($passed)
+                    break;
+            }
+        } 
+        else
+            $passed = true;
+
+        return $passed;
     }
 
     /**
@@ -783,9 +882,7 @@ class CFile extends CApplicationComponent
                 $this->create();
 
             if($this->writeable && file_put_contents($this->_realpath, $contents)!==false)
-            {
                 return $this;
-            }
 
             $this->addLog('Unable to put file contents');
             return false;
@@ -908,7 +1005,8 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Sets the current filesystem object owner, updates $_owner property on success.
+     * Sets the current filesystem object owner, updates $_owner property
+     * on success.
      * For UNIX systems.
      *
      * @param mixed $owner New owner name or ID
@@ -927,7 +1025,8 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Sets the current filesystem object group, updates $_group property on success.
+     * Sets the current filesystem object group, updates $_group property
+     * on success.
      * For UNIX systems.
      *
      * @param mixed $group New group name or ID
@@ -978,9 +1077,10 @@ class CFile extends CApplicationComponent
      * (i.e. copy('mynewfile.htm') makes a copy of the current filesystem object
      * in the same directory, named 'mynewfile.htm')
      *
-     * @param string $fileDest Destination filesystem object name (with or w/o path)
-     * submitted by user
-     * @return string Resolved real destination path for the current filesystem object
+     * @param string $fileDest Destination filesystem object name
+     * (with or w/o path) submitted by user
+     * @return string Resolved real destination path for the current filesystem
+     * object
      */
     private function resolveDestPath($fileDest)
     {
@@ -995,8 +1095,8 @@ class CFile extends CApplicationComponent
      * Destination path supplied by user resolved to real destination path with
      * {@link resolveDestPath}
      *
-     * @param string $fileDest Destination path for the current filesystem object
-     * to be copied to
+     * @param string $fileDest Destination path for the current filesystem
+     * object to be copied to
      * @return mixed New CFile object for newly created filesystem object on
      * success, 'false' on fail.
      */
@@ -1011,7 +1111,7 @@ class CFile extends CApplicationComponent
         }
         else
         {
-            Yii::trace('Copying directory "'.$this->_realpath.'" to "'.$destRealPath.'"', 'app.extensions.CFile');
+            Yii::trace('Copying directory "'.$this->_realpath.'" to "'.$destRealPath.'"', 'ext.file');
             $dirContents = $this->dirContents($this->_realpath, true);
             foreach ($dirContents as $item) {
                 $itemDest = $destRealPath.str_replace($this->_realpath, '', $item);
@@ -1038,8 +1138,8 @@ class CFile extends CApplicationComponent
      * Destination path supplied by user resolved to real destination path with
      * {@link resolveDestPath}
      *
-     * @param string $fileDest Destination path for the current filesystem object
-     * to be renamed/moved to
+     * @param string $fileDest Destination path for the current filesystem
+     * object to be renamed/moved to
      * @return mixed Updated current CFile object on success, 'false' on fail.
      */
     public function rename($fileDest)
@@ -1070,7 +1170,8 @@ class CFile extends CApplicationComponent
     /**
      * Purges (makes empty) the current filesystem object.
      * If the current filesystem object is a file its contents set to ''.
-     * If the current filesystem object is a directory all its descendants are deleted.
+     * If the current filesystem object is a directory all its descendants are
+     * deleted.
      *
      * @return mixed Current CFile object on success, 'false' on fail.
      */
@@ -1085,7 +1186,7 @@ class CFile extends CApplicationComponent
         }
         else
         {
-            Yii::trace('Purging directory "'.$path.'"', 'app.extensions.CFile');
+            Yii::trace('Purging directory "'.$path.'"', 'ext.file');
             $dirContents = $this->dirContents($path, true);
             foreach ($dirContents as $item) {
                 if(is_file($item))
@@ -1099,7 +1200,7 @@ class CFile extends CApplicationComponent
                 }
             }
 
-            // @todo need valid check here also
+            // @todo hey, still need a valid check here
             return true;
         }
     }
@@ -1108,7 +1209,8 @@ class CFile extends CApplicationComponent
      * Deletes the current filesystem object.
      * For folders purge parameter can be supplied.
      *
-     * @param boolean $purge If 'true' folder would be deleted with all the descendants
+     * @param boolean $purge If 'true' folder would be deleted with all the
+     * descendants
      * @return boolean 'True' if sucessfully deleted, 'false' on fail
      */
     public function delete($purge=true)
@@ -1128,7 +1230,8 @@ class CFile extends CApplicationComponent
     }
 
     /**
-     * Sends the current file to browser as a download with real or faked file name.
+     * Sends the current file to browser as a download with real or faked
+     * file name.
      * Browser caching is prevented.
      * This method works only for files.
      *
@@ -1243,13 +1346,14 @@ class CFile extends CApplicationComponent
      * This method will use a local map between extension name and MIME type.
      * This method works only for files.
      *
-     * @return string the MIME type. Null is returned if the MIME type cannot be determined.
+     * @return string the MIME type. Null is returned if the MIME type cannot
+     * be determined.
      */
     public function getMimeTypeByExtension()
     {
         if ($this->isFile)
         {
-            Yii::trace('Trying to get MIME type for "'.$this->_realpath.'" from extension "'.$this->_extension.'"', 'app.extensions.CFile');
+            Yii::trace('Trying to get MIME type for "'.$this->_realpath.'" from extension "'.$this->_extension.'"', 'ext.file');
             static $extensions;
             if($extensions===null)
                 $extensions=require(Yii::getPathOfAlias('system.utils.mimeTypes').'.php');
