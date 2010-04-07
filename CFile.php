@@ -5,11 +5,11 @@
  * CFile provides common methods to manipulate filesystem objects (files and
  * directories) from under Yii Framework (http://www.yiiframework.com)
  *
- * @version 0.6
+ * @version 0.6.1
  *
  * @author idle sign <idlesign@yandex.ru>
  * @link http://www.yiiframework.com/extension/cfile/
- * @copyright Copyright &copy; 2009 idle sign
+ * @copyright Copyright &copy; 2009-2010 idle sign
  * @license LICENSE.txt
  */
 class CFile extends CApplicationComponent
@@ -557,8 +557,8 @@ class CFile extends CApplicationComponent
     {
         if (!isset($this->_owner))
             $this->_owner = $this->exists?fileowner($this->_realpath):null;
-            
-        if (function_exists('posix_getpwuid') && $getName != false)
+
+        if (is_int($this->_owner) && function_exists('posix_getpwuid') && $getName==true)
         {
             $this->_owner = posix_getpwuid($this->_owner);
             $this->_owner = $this->_owner['name'];
@@ -581,7 +581,7 @@ class CFile extends CApplicationComponent
         if (!isset($this->_group))
             $this->_group = $this->exists?filegroup($this->_realpath):null;
             
-        if (function_exists('posix_getgrgid') && $getName != false)
+        if (is_int($this->_group) && function_exists('posix_getgrgid') && $getName==true)
         {
             $this->_group = posix_getgrgid($this->_group);
             $this->_group = $this->_group['name'];
