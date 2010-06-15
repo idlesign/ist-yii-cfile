@@ -5,7 +5,7 @@
  * CFile provides common methods to manipulate filesystem objects (files and
  * directories) from under Yii Framework (http://www.yiiframework.com)
  *
- * @version 0.6.1
+ * @version 0.7
  *
  * @author idle sign <idlesign@yandex.ru>
  * @link http://www.yiiframework.com/extension/cfile/
@@ -872,16 +872,18 @@ class CFile extends CApplicationComponent
      *
      * @param string $contents Contents to be written
      * @param boolean $autocreate If 'true' file will be created automatically
+     * @param integer $flags Flags for file_put_contents(). E.g.: FILE_APPEND
+     * to append data to file instead of overwriting.
      * @return mixed Current CFile object on success, 'false' on fail.
      */
-    public function setContents($contents=null, $autocreate=true)
+    public function setContents($contents=null, $autocreate=true, $flags=0)
     {
         if ($this->isFile)
         {
             if ($autocreate && !$this->exists)
                 $this->create();
 
-            if($this->writeable && file_put_contents($this->_realpath, $contents)!==false)
+            if($this->writeable && file_put_contents($this->_realpath, $contents, $flags)!==false)
                 return $this;
 
             $this->addLog('Unable to put file contents');

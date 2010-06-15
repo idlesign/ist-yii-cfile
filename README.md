@@ -1,13 +1,13 @@
 #CFile for Yii Framework.
 This extension offers commonly used functions for filesystem objects (files and directories) manipulation.
 
-Project page 
+Project page
 http://github.com/idlesign/ist-yii-cfile
 
 Report bugs to
 http://github.com/idlesign/ist-yii-cfile/issues
 
-   
+
 ###Properties
 * exists
 * isdir
@@ -41,10 +41,16 @@ http://github.com/idlesign/ist-yii-cfile/issues
 
 #Changelog
 
+###June 16, 2010
+* 0.7
+  * new: 'flags' argument for setContents() method (proposed by TeKi)
+  * fix: parameter type checks (for 'posix_getpwuid' & 'posix_getgrgid' functions) added to getOwner and getGroup methods (spotted by Spyros)
+
+
 ###December 8, 2009
 * 0.6
   * new: set() method now supports Yii path aliases (proposed by Spyros)
-  * chg: getContents() method now has 'filter' parameter to return filtered directory contents (regexp supported) 
+  * chg: getContents() method now has 'filter' parameter to return filtered directory contents (regexp supported)
   * fix: undefined 'uploaded' variable in set() method (spotted by jerry2801)
 
 
@@ -100,103 +106,97 @@ Extract the release file under `protected/extensions/file`
 ###Usage
 Introduce CFile to Yii.
 Add definition to CWebApplication config file (main.php)
-~~~
-[php]
-'components'=>array(
-    ...
-    'file'=>array(
-        'class'=>'application.extensions.file.CFile',
+
+    'components'=>array(
+        ...
+        'file'=>array(
+            'class'=>'application.extensions.file.CFile',
+        ),
+        ...
     ),
-    ...
-),
-~~~
 
 Now you can access CFile properties and methods as follows:
-~~~
-[php]
-$myfile = Yii::app()->file->set('files/test.txt', true);
-/* 
-  We use set() method to link new CFile object to our file
-  First set() parameter - 'files/test.txt' - is the file path (here we supply 
-  relative path wich is automatically converted into real file path such as 
-  '/var/www/htdocs/files/test.txt').
-  Second set() parameter - true - tells CFile to get all file properties at the 
-  very beginning (it could be omitted if we don't need all of them).
-  $myfile now contains CFile object, let's see what do we got there
-*/
-var_dump($myfile); // you may dump object to see all its properties
 
-echo $myfile->size; // or get property
+    $myfile = Yii::app()->file->set('files/test.txt', true);
+    /*
+      We use set() method to link new CFile object to our file
+      First set() parameter - 'files/test.txt' - is the file path (here we supply
+      relative path wich is automatically converted into real file path such as
+      '/var/www/htdocs/files/test.txt').
+      Second set() parameter - true - tells CFile to get all file properties at the
+      very beginning (it could be omitted if we don't need all of them).
+      $myfile now contains CFile object, let's see what do we got there
+    */
+    var_dump($myfile); // you may dump object to see all its properties
 
-$myfile->permissions=755; // or set property
+    echo $myfile->size; // or get property
 
-$mynewfile = $myfile->copy('test2.txt'); // or manipulate file somehow, eg. copy
-// See CFile methods for actions available.
+    $myfile->permissions=755; // or set property
 
-/*
-Now $mynewfile contains new CFile object 
-In this example file 'test2.txt' created in the same directory as our first 'test.txt' file
-*/
+    $mynewfile = $myfile->copy('test2.txt'); // or manipulate file somehow, eg. copy
+    // See CFile methods for actions available.
 
-/* The following is also valid */
-if (Yii::app()->file->set('files/test3.txt')->exists)
-    echo 'Bingo-bongo!';
-else
-    echo 'No-no-no.';
+    /*
+    Now $mynewfile contains new CFile object
+    In this example file 'test2.txt' created in the same directory as our first 'test.txt' file
+    */
 
-/*
-Since 0.5 you can manipulate uploaded files (through CUploadedFile Yii class).
+    /* The following is also valid */
+    if (Yii::app()->file->set('files/test3.txt')->exists)
+        echo 'Bingo-bongo!';
+    else
+        echo 'No-no-no.';
 
-Let's suppose that we have the following form in our html:
+    /*
+    Since 0.5 you can manipulate uploaded files (through CUploadedFile Yii class).
 
-  <form enctype="multipart/form-data" method="post">
-    <input type="file" name="myupload"/>
-    <input type="submit"/>
-  </form>
+    Let's suppose that we have the following form in our html:
 
-After the form is submitted we can handle uploaded file as usual.
-*/
-$uploaded = Yii::app()->file->set('myupload');
+      <form enctype="multipart/form-data" method="post">
+        <input type="file" name="myupload"/>
+        <input type="submit"/>
+      </form>
 
-// Let's copy newly uploaded file into 'files' directory with its original name.
-$newfile = $uploaded->copy('files/'.$uploaded->basename);
+    After the form is submitted we can handle uploaded file as usual.
+    */
+    $uploaded = Yii::app()->file->set('myupload');
 
-/*
-Since 0.6 you can use Yii path aliases.
-See http://www.yiiframework.com/doc/guide/basics.namespace for information 
-about path aliases.
+    // Let's copy newly uploaded file into 'files' directory with its original name.
+    $newfile = $uploaded->copy('files/'.$uploaded->basename);
 
-Now let's get the contents of the directory where CFile resides
-(supposing that it is in Yii extensions path in the 'file' subdirectory).
-*/
-$cfileDir = Yii::app()->file->set('ext.file');
-print_r($cfileDir->contents);
+    /*
+    Since 0.6 you can use Yii path aliases.
+    See http://www.yiiframework.com/doc/guide/basics.namespace for information
+    about path aliases.
 
-/*
-Directory contents filtering was also introduced in 0.6.
+    Now let's get the contents of the directory where CFile resides
+    (supposing that it is in Yii extensions path in the 'file' subdirectory).
+    */
+    $cfileDir = Yii::app()->file->set('ext.file');
+    print_r($cfileDir->contents);
 
-Futher we get all php files from $cfileDir mentioned above.
-We do not need all the decendants (recursion) so we supply 'false' as the first parameter 
-for getContents() method.
-The second parameter describes filter, i.e. let me see only 'php' files.
-You can supply an array of rules (eg. array('php', 'txt')).
-NB: Moreover you can define perl regular expressions as rules.
-*/
-print_r($cfileDir->getContents(false, 'php'));
+    /*
+    Directory contents filtering was also introduced in 0.6.
 
-~~~
+    Futher we get all php files from $cfileDir mentioned above.
+    We do not need all the decendants (recursion) so we supply 'false' as the first parameter
+    for getContents() method.
+    The second parameter describes filter, i.e. let me see only 'php' files.
+    You can supply an array of rules (eg. array('php', 'txt')).
+    NB: Moreover you can define perl regular expressions as rules.
+    */
+    print_r($cfileDir->getContents(false, 'php'));
+
 
 ###Usage hint
 The other way to use this class is to import it into Yii:
-~~~
-[php]
-Yii::import('application.extensions.file.CFile');
 
-if (CFile::set('files/test3.txt')->exists)
-    echo 'Bingo-bongo!';
-else
-    echo 'No-no-no.';
-~~~
+    Yii::import('application.extensions.file.CFile');
+
+    if (CFile::set('files/test3.txt')->exists)
+        echo 'Bingo-bongo!';
+    else
+        echo 'No-no-no.';
 
 ###Further reading
 Detailed information about class properties and methods could be found in CFile.php source code.
