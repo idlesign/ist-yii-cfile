@@ -1247,9 +1247,16 @@ class CFile extends CApplicationComponent
      * This method works only for files.
      *
      * @param string $fakeName New filename (eg. 'myfileFakedName.htm')
+     * @param boolean $serverHandled Whether file contents delivery is handled
+     * by server internals (cf. when file contents is read and sent by php).
+     * E.g.: lighttpd and Apache with mod-sendfile can use X-Senfile header to 
+     * speed up file delivery blazingly.
+     * Note: If you want to serve big or even huge files you are definetly
+     * advised to turn this option on and setup your server software
+     * appropriately, if not to say that it is your only alternative :).
      * @return file File download
      */
-    public function send($fakeName=false)
+    public function send($fakeName=false, $serverHandled=false)
     {
         if ($this->isFile)
         {
@@ -1275,11 +1282,18 @@ class CFile extends CApplicationComponent
                 header('Content-Length: '.$this->size(false));
                 header('Content-Disposition: attachment;filename="'.$filename.'"');
 
-                if ($contents = $this->contents)
+                if ($serverHandled)
                 {
-                    echo $contents;
-                    exit;
+                    header('X-Sendfile: '.$this->_realpath);
                 }
+                else
+                {
+                    if ($contents = $this->contents)
+                    {
+                        echo $contents;
+                    }
+                }
+                exit;
             }
 
             $this->addLog('Unable to prepare file for download. Headers already sent or file doesn\'t not exist');
@@ -1295,8 +1309,8 @@ class CFile extends CApplicationComponent
     /**
      * Alias for {@link send}
      */
-    function download($fakeName=false){
-        return $this->send($fakeName);
+    function download($fakeName=false, $serverHandled=false){
+        return $this->send($fakeName, $serverHandled);
     }
 
     // Modified methods taken from Yii CFileHelper.php are listed below
