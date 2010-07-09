@@ -5,7 +5,7 @@
  * CFile provides common methods to manipulate filesystem objects (files and
  * directories) from under Yii Framework (http://www.yiiframework.com)
  *
- * @version 0.7
+ * @version 0.7dev
  *
  * @author idle sign <idlesign@yandex.ru>
  * @link http://www.yiiframework.com/extension/cfile/
@@ -235,7 +235,16 @@ class CFile extends CApplicationComponent
 
         $this->_dirname = $pathinfo['dirname'];
         $this->_basename = $pathinfo['basename'];
-        $this->_filename = $pathinfo['filename'];
+
+        // PHP version < 5.2 workaround
+        if(!isset($pathinfo['filename']))
+        {
+            $this->_filename = substr($pathinfo['basename'], 0, strrpos($pathinfo['basename'], '.'));
+        }
+        else
+        {
+            $this->_filename = $pathinfo['filename'];
+        }
         if (key_exists('extension', $pathinfo))
             $this->_extension = $pathinfo['extension'];
         else
@@ -1060,7 +1069,7 @@ class CFile extends CApplicationComponent
         if ($this->exists && is_numeric($permissions))
         {
             // '755' normalize to octal '0755'
-            $permissions = str_pad($permissions, 4, "0", STR_PAD_LEFT);
+            $permissions = octdec(str_pad($permissions, 4, "0", STR_PAD_LEFT));
 
             if(@chmod($this->_realpath, $permissions))
             {
