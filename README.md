@@ -2,10 +2,10 @@
 This extension offers commonly used functions for filesystem objects (files and directories) manipulation.
 
 Project page
-http://github.com/idlesign/ist-yii-cfile
+[http://github.com/idlesign/ist-yii-cfile](http://github.com/idlesign/ist-yii-cfile)
 
 Report bugs to
-http://github.com/idlesign/ist-yii-cfile/issues
+[http://github.com/idlesign/ist-yii-cfile/issues](http://github.com/idlesign/ist-yii-cfile/issues)
 
 
 ###Properties
@@ -40,6 +40,12 @@ http://github.com/idlesign/ist-yii-cfile/issues
 
 
 #Changelog
+
+###August 20, 2010
+* 0.8
+  * new: 'serverHandled' parameter in send() & download() methods allows sending [even huge] files with great speed
+  * fix: be PHP 5.1+ compatible (proposed by heyhoo)
+  * fix: permissions set incorrectly (spotted by heyhoo)
 
 ###June 16, 2010
 * 0.7
@@ -187,6 +193,12 @@ Now you can access CFile properties and methods as follows:
     */
     print_r($cfileDir->getContents(false, 'php'));
 
+    /*
+    Since 0.8 you can boost up file downloads.
+    Feature requires 'x-sendfile' header support from server (eg. Apache with mod_xsendfile or lighttpd).
+    If CFile::download() second parameter ('serverHandled') is set to True file download uses server internals.
+    */
+    $myfile->download('myfastfile.txt', true);
 
 ###Usage hint
 The other way to use this class is to import it into Yii:
