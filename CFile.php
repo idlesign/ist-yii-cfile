@@ -395,7 +395,7 @@ class CFile extends CApplicationComponent
     {
         if (!isset($this->isEmpty))
         {
-            if (($this->isFile && $this->size(false)==0) ||
+            if (($this->isFile && $this->getSize(false)==0) ||
                 (!$this->isFile && count($this->dirContents($this->_realpath))==0 ))
                 $this->_isEmpty = true;
             else
@@ -618,37 +618,24 @@ class CFile extends CApplicationComponent
      * Returns size of current filesystem object.
      * Returned value depends upon $format parameter value.
      * If $_size property is set, returned value is read from that property.
-     * Uses privat method {@link size}.
+     * Uses {@link dirSize} method for directory size calculation.
      *
      * @param mixed $format Number format (see {@link CNumberFormatter})
      * or 'false'
      * @return mixed Filesystem object size formatted (eg. '70.4 KB') or in
      * bytes (eg. '72081') if $format set to 'false'
      */
-    public function getSize($format='0.00')
-    {
-        if (!isset($this->_size))
-            $this->_size = $this->size($format);
-
-        return $this->_size;
-    }
-
-    /**
-     * Gets the current filesystem object size.
-     * Uses {@link dirSize} method for directory size calculation.
-     *
-     * This method is used internally.
-     * See {@link getSize} method params for detailed information.
-     */
-    private function size($format){
-
-        if ($this->isFile)
-            $size = $this->exists?sprintf("%u", filesize($this->_realpath)):null;
-        else
-            $size = $this->exists?sprintf("%u", $this->dirSize()):null;
+    public function getSize($format='0.00'){
+        $size = $this->_size;
+        if (!isset($this->_size)){
+            if ($this->isFile)
+                $this->_size = $this->exists?sprintf("%u", filesize($this->_realpath)):null;
+            else
+                $this->_size = $this->exists?sprintf("%u", $this->dirSize()):null;
+        }
         
         if ($format !== false)
-            $size = $this->formatFileSize($size, $format);
+            $size = $this->formatFileSize($this->_size, $format);
 
         return $size;
     }
@@ -1279,7 +1266,7 @@ class CFile extends CApplicationComponent
 
                 header('Content-Type: '.$content_type);
                 header('Content-Transfer-Encoding: binary');
-                header('Content-Length: '.$this->size(false));
+                header('Content-Length: '.$this->getSize(false));
                 header('Content-Disposition: attachment;filename="'.$filename.'"');
 
                 if ($serverHandled)
