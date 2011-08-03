@@ -41,6 +41,12 @@ Report bugs to
 
 #Changelog
 
+###August 3, 2011
+* 0.9
+  * fix: getSize() always returning formatted value (spotted by soulge)
+  * fix: getSize() returning null when format set to False (spotted by iceblock)
+  * fix: fail to determine mime type by extension when extension is not lowercased  (closes #4)
+
 ###August 20, 2010
 * 0.8
   * new: 'serverHandled' parameter in send() & download() methods allows sending [even huge] files with great speed

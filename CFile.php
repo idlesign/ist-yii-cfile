@@ -5,11 +5,11 @@
  * CFile provides common methods to manipulate filesystem objects (files and
  * directories) from under Yii Framework (http://www.yiiframework.com)
  *
- * @version 0.8
+ * @version 0.9
  *
  * @author idle sign <idlesign@yandex.ru>
  * @link http://www.yiiframework.com/extension/cfile/
- * @copyright Copyright &copy; 2009-2010 Igor 'idle sign' Starikov
+ * @copyright Copyright &copy; 2009-2011 Igor 'idle sign' Starikov
  * @license LICENSE.txt
  */
 class CFile extends CApplicationComponent
