@@ -626,13 +626,13 @@ class CFile extends CApplicationComponent
      * bytes (eg. '72081') if $format set to 'false'
      */
     public function getSize($format='0.00'){
-        $size = $this->_size;
         if (!isset($this->_size)){
             if ($this->isFile)
                 $this->_size = $this->exists?sprintf("%u", filesize($this->_realpath)):null;
             else
                 $this->_size = $this->exists?sprintf("%u", $this->dirSize()):null;
         }
+        $size = $this->_size;
         
         if ($format !== false)
             $size = $this->formatFileSize($this->_size, $format);
