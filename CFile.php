@@ -1358,7 +1358,7 @@ class CFile extends CApplicationComponent
      * This method will use a local map between extension name and MIME type.
      * This method works only for files.
      *
-     * @return string the MIME type. Null is returned if the MIME type cannot
+     * @return string the MIME type. False is returned if the MIME type cannot
      * be determined.
      */
     public function getMimeTypeByExtension()
@@ -1370,8 +1370,9 @@ class CFile extends CApplicationComponent
             if($extensions===null)
                 $extensions=require(Yii::getPathOfAlias('system.utils.mimeTypes').'.php');
 
-            if(!empty($this->_extension) && isset($extensions[$this->_extension]))
-                    return $extensions[$this->_extension];
+            $ext = strtolower($this->_extension);
+            if(!empty($ext) && isset($extensions[$ext]))
+                    return $extensions[$ext];
 
             return false;
         }
