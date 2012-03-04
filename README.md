@@ -154,10 +154,11 @@ Now you can access CFile properties and methods as follows:
     */
 
     /* The following is also valid */
-    if (Yii::app()->file->set('files/test3.txt')->exists)
+    if (Yii::app()->file->set('files/test3.txt')->exists) {
         echo 'Bingo-bongo!';
-    else
+    } else {
         echo 'No-no-no.';
+    }
 
     /*
     Since 0.5 you can manipulate uploaded files (through CUploadedFile Yii class).
@@ -211,10 +212,11 @@ The other way to use this class is to import it into Yii:
 
     Yii::import('application.extensions.file.CFile');
 
-    if (CFile::set('files/test3.txt')->exists)
+    if (CFile::set('files/test3.txt')->exists) {
         echo 'Bingo-bongo!';
-    else
+    } else {
         echo 'No-no-no.';
+    }
 
 ###Further reading
 Detailed information about class properties and methods could be found in CFile.php source code.
