@@ -10,7 +10,7 @@
  * @author idle sign <idlesign@yandex.ru>
  * @link http://www.yiiframework.com/extension/cfile/
  * @copyright Copyright &copy; 2009-2012 Igor 'idle sign' Starikov
- * @license LICENSE.txt
+ * @license LICENSE
  */
 
 
