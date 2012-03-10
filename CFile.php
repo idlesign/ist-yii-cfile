@@ -1,11 +1,9 @@
 <?php
-
-
 /**
- * CFile class file.
- *
  * CFile provides common methods to manipulate filesystem objects (files and
- * directories) from under Yii Framework (http://www.yiiframework.com)
+ * directories) from Yii Framework (http://www.yiiframework.com).
+ *
+ * Please use CFileHelper class to access CFile functionality if not using Yii.
  *
  * @version 1.0a
  *
@@ -13,6 +11,15 @@
  * @link http://www.yiiframework.com/extension/cfile/
  * @copyright Copyright &copy; 2009-2012 Igor 'idle sign' Starikov
  * @license LICENSE.txt
+ */
+
+
+/* Exception type raised by CFile. */
+class CFileException extends Exception {}
+
+
+/**
+ * Base CFile class built to work with Yii.
  */
 class CFile extends CApplicationComponent {
     /**
@@ -122,12 +129,16 @@ class CFile extends CApplicationComponent {
     /**
      * Returns the instance of CFile for the specified file.
      *
-     * @param string $filepath Path to file specified by user
+     * @param string $filepath Path to file specified by user.
+     * @param string $class_name Class name to spawn object for.
      * @return object CFile instance
      */
-    public static function getInstance($filepath) {
+    public static function getInstance($filepath, $class_name=__CLASS__) {
+        if (!is_subclass_of($class_name, 'CFile')) {
+            throw new CFileException('Unable to spawn CFile object from `' . $class_name . '` class');
+        }
         if (!array_key_exists($filepath, self::$_instances)) {
-            self::$_instances[$filepath] = new CFile($filepath);
+            self::$_instances[$filepath] = new $class_name($filepath);
         }
         return self::$_instances[$filepath];
     }
@@ -139,7 +150,7 @@ class CFile extends CApplicationComponent {
      * @param string $level Level of the message (e.g. 'trace', 'warning',
      * 'error', 'info', see CLogger constants definitions)
      */
-    private function addLog($message, $level='info') {
+    protected function addLog($message, $level='info') {
         Yii::log($message.' (obj: ' . $this->getRealPath() . ')', $level, 'ext.file');
     }
 
@@ -149,7 +160,7 @@ class CFile extends CApplicationComponent {
      * @param string $alias
      * @return bool|string
      */
-    private function getPathOfAlias($alias) {
+    protected function getPathOfAlias($alias) {
         return Yii::getPathOfAlias($alias);
     }
 
@@ -163,7 +174,7 @@ class CFile extends CApplicationComponent {
      * @param string $format
      * @return string
      */
-    private function formatNumber ($number, $format) {
+    protected function formatNumber ($number, $format) {
         return Yii::app()->numberFormatter->format($format, $number);
     }
 
@@ -200,8 +211,9 @@ class CFile extends CApplicationComponent {
             }
 
             clearstatcache();
-            $realPath = self::realPath($filepath);
-            $inst = self::getInstance($realPath);
+            $cl = get_class($this);
+            $realPath = $cl::realPath($filepath);
+            $inst = $cl::getInstance($realPath);
             $inst->_filepath = $filepath;
             $inst->_realpath = $realPath;
 
@@ -227,7 +239,7 @@ class CFile extends CApplicationComponent {
             return $inst;
         }
 
-        throw new Exception('Path to filesystem object is not specified within set() method');
+        throw new CFileException('Path to filesystem object is not specified within set() method');
     }
 
     /**
@@ -765,7 +777,7 @@ class CFile extends CApplicationComponent {
      * Could be a string, or an array of strings (perl regexp supported).
      * See {@link filterPassed} method for further information on filters.
      * @return array Array of descendants filepaths
-     * @throws CHttpException
+     * @throws CFileException
      */
     private function dirContents($directory=null, $recursive=False, $filter=null) {
         $descendants = array();
@@ -800,7 +812,7 @@ class CFile extends CApplicationComponent {
                 }
             }
         } else {
-            throw new Exception('Unable to get directory contents for "' . $directory . DIRECTORY_SEPARATOR . '"');
+            throw new CFileException('Unable to get directory contents for "' . $directory . DIRECTORY_SEPARATOR . '"');
         }
 
         return $descendants;
