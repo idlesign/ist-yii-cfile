@@ -151,9 +151,23 @@ class CFile extends CApplicationComponent {
      * @param string $message Message to be logged
      * @param string $level Level of the message (e.g. 'trace', 'warning',
      * 'error', 'info', see CLogger constants definitions)
+     * 
+     * @todo make the addLog method static and remove any reference to this
+     * If possible add some funtionality to log calling objects real path
      */
-    protected function addLog($message, $level='info') {
-        Yii::log($message.' (obj: ' . $this->getRealPath() . ')', $level, 'ext.file');
+    protected static function addLog($message, $level='info') {
+        $completeMessage = $message;
+        
+        /*
+         * @todo Figure out some way to send the current object real path
+         * the best approach is to send real path as string from non-static functions
+         * for static functions it wont matter or we can send the $instance on
+         * which the static method is working
+         * 
+         * $completeMessage .= ' (obj: ' . $this->getRealPath() . ')';
+         */
+        
+        Yii::log($completeMessage, $level, 'ext.file');
     }
 
     /**
@@ -162,7 +176,7 @@ class CFile extends CApplicationComponent {
      * @param string $alias
      * @return bool|string
      */
-    protected function getPathOfAlias($alias) {
+    protected static function getPathOfAlias($alias) {
         return Yii::getPathOfAlias($alias);
     }
 
@@ -196,7 +210,7 @@ class CFile extends CApplicationComponent {
      * 'Permission', etc.) would be autoloaded
      * @return object CFile instance for the specified filesystem object
      */
-    public function set($filepath, $greedy=False) {
+    public static function set($filepath, $greedy=False) {
         if (trim($filepath)!='') {
 
             $uploaded = null;
@@ -205,17 +219,17 @@ class CFile extends CApplicationComponent {
                 $uploaded = CUploadedFile::getInstanceByName($filepath);
                 if ($uploaded) {
                     $filepath = $uploaded->getTempName();
-                    $this->addLog('File "' . $filepath . '" is identified as uploaded', 'trace');
-                } elseif ($aliased_path=$this->getPathOfAlias($filepath)) {
-                    $this->addLog('The string supplied to set() - "' . $filepath . '" is identified as the alias to "' . $aliased_path . '"', 'trace');
+                    self::addLog('File "' . $filepath . '" is identified as uploaded', 'trace');
+                } elseif ($aliased_path = self::getPathOfAlias($filepath)) {
+                    self::addLog('The string supplied to set() - "' . $filepath . '" is identified as the alias to "' . $aliased_path . '"', 'trace');
                     $filepath = $aliased_path;
                 }
             }
 
             clearstatcache();
-            $cl = get_class($this);
-            $realPath = $cl::realPath($filepath);
-            $inst = $cl::getInstance($realPath);
+            // $cl = get_class($this);
+            $realPath = self::realPath($filepath);
+            $inst = self::getInstance($realPath);
             $inst->_filepath = $filepath;
             $inst->_realpath = $realPath;
 
@@ -305,7 +319,7 @@ class CFile extends CApplicationComponent {
      * @param string $dir_separator Directory separator char (depends upon OS)
      * @return string Real file path
      */
-    private function realPath($supplied_path, $dir_separator=DIRECTORY_SEPARATOR) {
+    private static function realPath($supplied_path, $dir_separator=DIRECTORY_SEPARATOR) {
         $current_path = $supplied_path;
 
         if (!strlen($current_path)) {
@@ -345,7 +359,7 @@ class CFile extends CApplicationComponent {
         $realpath = $win_drive . $dir_separator . implode($dir_separator, $paths);
 
         if ($current_path!=$supplied_path) {
-            $this->addLog('Path "' . $supplied_path . '" resolved into "' . $realpath . '"', 'trace');
+            self::addLog('Path "' . $supplied_path . '" resolved into "' . $realpath . '"', 'trace');
         }
 
         return $realpath;
@@ -483,14 +497,14 @@ class CFile extends CApplicationComponent {
         if (!$this->getExists()) {
             if ($this->open('w')) {
                 $this->close();
-                return $this->set($this->_realpath);
+                return self::set($this->_realpath);
             }
 
-            $this->addLog('Unable to create empty file');
+            self::addLog('Unable to create empty file');
             return False;
         }
 
-        $this->addLog('File creation failed. File already exists');
+        self::addLog('File creation failed. File already exists');
         return False;
     }
 
@@ -1135,7 +1149,7 @@ class CFile extends CApplicationComponent {
                 return True;
             }
         } else {
-            $this->addLog('Purging directory "' . $path . '"', 'trace');
+           self::addLog('Purging directory "' . $path . '"', 'trace');
             $contents = $this->dirContents($path, True);
             foreach ($contents as $item) {
                 if (is_file($item)) {
