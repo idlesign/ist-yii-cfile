@@ -98,7 +98,6 @@ class CFileTest extends CTestCase {
      */
     public function testPurge_PurgingFolder_ReturnsTrue() {
         $this->folderObject = CFile::set(self::$BASE_PATH . '\files\to-be-purged')->createDir();
-        $folder = CFile::set($this->folderObject->realpath . '\to-be-purged')->createDir();
         $file = CFile::set($this->folderObject->realPath . '\to-be-purged.txt');
         $file->create();
         
