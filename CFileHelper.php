@@ -44,7 +44,6 @@ class CFileHelper extends CFile {
     /**
      * @var null|CFile
      */
-    private static $_obj = null;
     private static $_log = array();
 
     /**
@@ -55,11 +54,8 @@ class CFileHelper extends CFile {
      * @param bool $greedy If `True` file properties (such as 'Size', 'Owner', 'Permission', etc.) would be autoloaded
      * @return CFile
      */
-    public static function get($filepath, $greedy=false) {
-        if (self::$_obj===null) {
-            self::$_obj = new self();
-        }
-        return self::$_obj->set($filepath, $greedy);
+    public static function get($filepath, $greedy=false, $className = __CLASS__) {
+        return parent::set($filepath, $greedy, $className);
     }
 
     /**
@@ -71,12 +67,6 @@ class CFileHelper extends CFile {
         return self::$_log;
     }
 
-    /* ================================================== */
-
-    public static function getInstance($filepath) {
-        return parent::getInstance($filepath, __CLASS__);
-    }
-
     /**
      * Adds log data into into class property.
      *
@@ -85,15 +75,15 @@ class CFileHelper extends CFile {
      * @param string $message
      * @param string $level
      */
-    protected function addLog($message, $level='info') {
+    protected static function addLog($message, $level='info') {
         self::$_log[] = array($level, $message);
     }
 
-    protected function getPathOfAlias($alias) {
+    protected static function getPathOfAlias($alias) {
         return null;
     }
 
-    protected function formatNumber ($number, $format) {
+    protected static function formatNumber ($number, $format) {
         return (string)$number;
     }
 
