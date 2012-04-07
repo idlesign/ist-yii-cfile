@@ -11,6 +11,11 @@
  * @link http://www.yiiframework.com/extension/cfile/
  * @copyright Copyright &copy; 2009-2012 Igor 'idle sign' Starikov
  * @license LICENSE
+ * 
+ * @todo Make the remaining methods static
+ * @todo Also fix issue #2 and #3
+ * @todo Dissect the classes into two new CFile and CDirectory, extending them from CResource abstract class
+ * 
  */
 
 
@@ -128,6 +133,9 @@ class CFile extends CApplicationComponent {
 
     /**
      * Returns the instance of CFile for the specified file.
+     * 
+     * This method makes sure that only one CFile instance is created for a 
+     * specific file
      *
      * @param string $filepath Path to file specified by user.
      * @param string $class_name Class name to spawn object for.
@@ -219,9 +227,9 @@ class CFile extends CApplicationComponent {
                 $uploaded = CUploadedFile::getInstanceByName($filepath);
                 if ($uploaded) {
                     $filepath = $uploaded->getTempName();
-                    self::addLog('File "' . $filepath . '" is identified as uploaded', 'trace');
+                    self::log('File "' . $filepath . '" is identified as uploaded', 'trace');
                 } elseif ($aliased_path = self::getPathOfAlias($filepath)) {
-                    self::addLog('The string supplied to set() - "' . $filepath . '" is identified as the alias to "' . $aliased_path . '"', 'trace');
+                    self::log('The string supplied to set() - "' . $filepath . '" is identified as the alias to "' . $aliased_path . '"', 'trace');
                     $filepath = $aliased_path;
                 }
             }
@@ -359,7 +367,7 @@ class CFile extends CApplicationComponent {
         $realpath = $win_drive . $dir_separator . implode($dir_separator, $paths);
 
         if ($current_path!=$supplied_path) {
-            self::addLog('Path "' . $supplied_path . '" resolved into "' . $realpath . '"', 'trace');
+            self::log('Path "' . $supplied_path . '" resolved into "' . $realpath . '"', 'trace');
         }
 
         return $realpath;
@@ -471,7 +479,7 @@ class CFile extends CApplicationComponent {
      * @return boolean 'True' if filesystem object exists, overwise 'False'
      */
     private function exists() {
-        $this->addLog('Filesystem object availability test: ' . $this->_realpath, 'trace');
+        self::log('Filesystem object availability test: ' . $this->_realpath, 'trace');
 
         if (file_exists($this->_realpath)) {
             $this->_exists = True;
@@ -483,7 +491,7 @@ class CFile extends CApplicationComponent {
             return True;
         }
 
-        $this->addLog('Filesystem object not found');
+        self::log('Filesystem object not found');
         return False;
     }
 
@@ -500,11 +508,11 @@ class CFile extends CApplicationComponent {
                 return self::set($this->_realpath);
             }
 
-            self::addLog('Unable to create empty file');
+            self::log('Unable to create empty file');
             return False;
         }
 
-        self::addLog('File creation failed. File already exists');
+        self::log('File creation failed. File already exists');
         return False;
     }
 
@@ -533,7 +541,7 @@ class CFile extends CApplicationComponent {
             }
         }
 
-        $this->addLog('Unable to create empty directory "' . $dir . '"');
+        self::log('Unable to create empty directory "' . $dir . '"');
         return False;
     }
 
@@ -552,7 +560,7 @@ class CFile extends CApplicationComponent {
                 return $this;
             }
 
-            $this->addLog('Unable to open file using mode "' . $mode . '"');
+            self::log('Unable to open file using mode "' . $mode . '"');
             return False;
         }
         return $this;
@@ -779,7 +787,7 @@ class CFile extends CApplicationComponent {
                 }
             }
         }
-        $this->addLog('Unable to get filesystem object contents' . ($filter!==null ? ' *using supplied filter*' : ''));
+        self::log('Unable to get filesystem object contents' . ($filter!==null ? ' *using supplied filter*' : ''));
         return False;
     }
 
@@ -886,10 +894,10 @@ class CFile extends CApplicationComponent {
                 return $this;
             }
 
-            $this->addLog('Unable to put file contents');
+            self::log('Unable to put file contents');
             return False;
         } else {
-            $this->addLog('setContents() method is available only for files', 'warning');
+            self::log('setContents() method is available only for files', 'warning');
             return False;
         }
     }
@@ -905,7 +913,7 @@ class CFile extends CApplicationComponent {
     public function setBasename($basename=null) {
         if ($this->getIsFile()) {
             if ($this->getIsUploaded()) {
-                $this->addLog('setBasename() is unavailable for uploaded files. Please copy/move uploaded file from temporary directory', 'warning');
+                self::log('setBasename() is unavailable for uploaded files. Please copy/move uploaded file from temporary directory', 'warning');
                 return False;
             }
 
@@ -913,11 +921,11 @@ class CFile extends CApplicationComponent {
                 return $this;
             }
 
-            $this->addLog('Unable to set file basename "' . $basename . '"');
+            self::log('Unable to set file basename "' . $basename . '"');
             return False;
         }
 
-        $this->addLog('setBasename() is available only for files', 'warning');
+        self::log('setBasename() is available only for files', 'warning');
         return False;
     }
 
@@ -932,7 +940,7 @@ class CFile extends CApplicationComponent {
     public function setFilename($filename=null) {
         if ($this->getIsFile()) {
             if ($this->getIsUploaded()) {
-                $this->addLog('setFilename() is unavailable for uploaded files. Please copy/move uploaded file from temporary directory', 'warning');
+                self::log('setFilename() is unavailable for uploaded files. Please copy/move uploaded file from temporary directory', 'warning');
                 return False;
             }
 
@@ -940,11 +948,11 @@ class CFile extends CApplicationComponent {
                 return $this;
             }
 
-            $this->addLog('Unable to set file name "' . $filename . '"');
+            self::log('Unable to set file name "' . $filename . '"');
             return False;
         }
 
-        $this->addLog('setFilename() method is available only for files', 'warning');
+        self::log('setFilename() method is available only for files', 'warning');
         return False;
     }
 
@@ -960,7 +968,7 @@ class CFile extends CApplicationComponent {
     public function setExtension($extension=False) {
         if ($this->getIsFile()) {
             if ($this->getIsUploaded()) {
-                $this->addLog('setExtension() is unavailable for uploaded files. Please copy/move uploaded file from temporary directory', 'warning');
+                self::log('setExtension() is unavailable for uploaded files. Please copy/move uploaded file from temporary directory', 'warning');
                 return False;
             }
 
@@ -984,11 +992,11 @@ class CFile extends CApplicationComponent {
                 }
             }
 
-            $this->addLog('Unable to set file extension "' . $extension . '"');
+            self::log('Unable to set file extension "' . $extension . '"');
             return False;
         }
 
-        $this->addLog('setExtension() is available only for files', 'warning');
+        self::log('setExtension() is available only for files', 'warning');
         return False;
     }
 
@@ -1006,7 +1014,7 @@ class CFile extends CApplicationComponent {
             return $this;
         }
 
-        $this->addLog('Unable to set owner for filesystem object to "' . $owner . '"');
+        self::log('Unable to set owner for filesystem object to "' . $owner . '"');
         return False;
     }
 
@@ -1024,7 +1032,7 @@ class CFile extends CApplicationComponent {
             return $this;
         }
 
-        $this->addLog('Unable to set group for filesystem object to "' . $group . '"');
+        self::log('Unable to set group for filesystem object to "' . $group . '"');
         return False;
     }
 
@@ -1048,7 +1056,7 @@ class CFile extends CApplicationComponent {
             }
         }
 
-        $this->addLog('Unable to change permissions for filesystem object to "' . $permissions . '"');
+        self::log('Unable to change permissions for filesystem object to "' . $permissions . '"');
         return False;
     }
 
@@ -1087,7 +1095,7 @@ class CFile extends CApplicationComponent {
                 return $this->set($dest_realpath);
             }
         } else {
-            $this->addLog('Copying directory "' . $this->_realpath . '" to "' . $dest_realpath . '"', 'trace');
+            self::log('Copying directory "' . $this->_realpath . '" to "' . $dest_realpath . '"', 'trace');
             $contents = $this->dirContents($this->_realpath, True);
             foreach ($contents as $item) {
                 $item_dest = $dest_realpath.str_replace($this->_realpath, '', $item);
@@ -1101,7 +1109,7 @@ class CFile extends CApplicationComponent {
             return $this->set($dest_realpath);
         }
 
-        $this->addLog('Unable to copy filesystem object into "' . $dest_realpath . '"');
+        self::log('Unable to copy filesystem object into "' . $dest_realpath . '"');
         return False;
     }
 
@@ -1125,7 +1133,7 @@ class CFile extends CApplicationComponent {
             return $this;
         }
 
-        $this->addLog('Unable to rename/move filesystem object into "' . $dest_realpath . '"');
+        self::log('Unable to rename/move filesystem object into "' . $dest_realpath . '"');
         return False;
     }
 
@@ -1149,7 +1157,7 @@ class CFile extends CApplicationComponent {
                 return True;
             }
         } else {
-           self::addLog('Purging directory "' . $path . '"', 'trace');
+           self::log('Purging directory "' . $path . '"', 'trace');
             $contents = $this->dirContents($path, True);
             foreach ($contents as $item) {
                 if (is_file($item)) {
@@ -1182,7 +1190,7 @@ class CFile extends CApplicationComponent {
             }
         }
 
-        $this->addLog('Unable to delete filesystem object');
+        self::log('Unable to delete filesystem object');
         return False;
     }
 
@@ -1238,10 +1246,10 @@ class CFile extends CApplicationComponent {
                 exit;
             }
 
-            $this->addLog('Unable to prepare file for download. Headers already sent or file doesn\'t not exist');
+            self::log('Unable to prepare file for download. Headers already sent or file doesn\'t not exist');
             return False;
         } else {
-            $this->addLog('send() and download() methods are available only for files', 'warning');
+            self::log('send() and download() methods are available only for files', 'warning');
             return False;
         }
     }
@@ -1308,10 +1316,10 @@ class CFile extends CApplicationComponent {
 
             }
 
-            $this->addLog('Unable to get mime type for file');
+            self::log('Unable to get mime type for file');
             return False;
         } else {
-            $this->addLog('getMimeType() method is available only for files', 'warning');
+            self::log('getMimeType() method is available only for files', 'warning');
             return False;
         }
     }
@@ -1326,7 +1334,7 @@ class CFile extends CApplicationComponent {
      */
     public function getMimeTypeByExtension() {
         if ($this->getIsFile()) {
-            $this->addLog('Trying to get MIME type for "' . $this->_realpath . '" from extension "' . $this->_extension . '"', 'trace');
+            self::log('Trying to get MIME type for "' . $this->_realpath . '" from extension "' . $this->_extension . '"', 'trace');
             static $exts;
 
             if ($exts===null) {
@@ -1339,7 +1347,7 @@ class CFile extends CApplicationComponent {
             }
             return False;
         } else {
-            $this->addLog('getMimeTypeByExtension() is available only for files', 'warning');
+            self::log('getMimeTypeByExtension() is available only for files', 'warning');
             return False;
         }
     }
