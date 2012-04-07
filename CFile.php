@@ -140,20 +140,16 @@ class CFile extends CApplicationComponent {
      * Returns the instance of CFile for the specified file.
      * 
      * This method makes sure that only one CFile instance is created for a 
-     * specific file
+     * specific file. This method is private, so subclasses cannot inherit or
+     * invoke it.
      *
      * @param string $filepath Path to file specified by user.
      * @param string $class_name Class name to spawn object for.
      * @return object CFile instance
      */
-    public static function getInstance($filepath, $class_name=__CLASS__) {
-        // Added && $class_name !== 'CFile' condition to allow creation of file
-        // objects from CFile.
-        if (!is_subclass_of($class_name, 'CFile') && $class_name !== 'CFile') {
-            throw new CFileException('Unable to spawn CFile object from `' . $class_name . '` class');
-        }
+    private static function getInstance($filepath) {
         if (!array_key_exists($filepath, self::$_instances)) {
-            self::$_instances[$filepath] = new $class_name($filepath);
+            self::$_instances[$filepath] = new CFile($filepath);
         }
         return self::$_instances[$filepath];
     }
@@ -232,7 +228,11 @@ class CFile extends CApplicationComponent {
      * 'Permission', etc.) would be autoloaded
      * @return object CFile instance for the specified filesystem object
      */
-    public static function set($filepath, $greedy=False) {
+    public static function set($filepath, $greedy=false, $className = __CLASS__) {
+		if(self::$className === null) {
+			self::$className = $className;
+		}
+	
         if (trim($filepath)!='') {
 
             $uploaded = null;
