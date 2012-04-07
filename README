@@ -56,7 +56,7 @@ Installation
 ------------
 
     * For Yii: extract extension files under `protected/extensions/file`.
-    * W/o Yii: extract extension files into a directory of choise.
+    * W/o Yii: extract extension files into a directory of choice.
 
 
 Usage
@@ -65,26 +65,24 @@ Usage
 To use with Yii Framework:
 
   * Introduce CFile to Yii.
-  * Add definition to CWebApplication config file (main.php)
+  * Add import definition to CWebApplication config file (main.php)
 
    ::
 
-    'components'=>array(
+    'import'=>array(
+		...
+		'application.extensions.file.CFile',
         ...
-        'file'=>array(
-            'class'=>'application.extensions.file.CFile',
-        ),
-        ...
-    ),
+	),
 
   * Now you can access CFile properties and methods as follows:
 
    ::
 
-    $myfile = Yii::app()->file->set('files/test.txt', true);
+    $myfile = CFile::set('files/test.txt', true);
     /*
      * We use set() method to link new CFile object to our file. First set() parameter 
-     * - 'files/test.txt' - is the file path (here we supply relative path wich 
+     * - 'files/test.txt' - is the file path (here we supply relative path which 
      * is automatically converted into real file path such as '/var/www/htdocs/files/test.txt'). 
      * Second set() parameter - true - tells CFile to get all file properties at the very 
      * beginning (it could be omitted if we don't need all of them).
@@ -105,7 +103,7 @@ To use with Yii Framework:
      */
 
     // The following is also valid.
-    if (Yii::app()->file->set('files/test3.txt')->exists) {
+    if (CFile::set('files/test3.txt')->exists) {
         echo 'Bingo-bongo!';
     } else {
         echo 'No-no-no.';
@@ -123,7 +121,7 @@ To use with Yii Framework:
      * 
      * After the form is submitted we can handle uploaded file as usual.
      */
-    $uploaded = Yii::app()->file->set('myupload');
+    $uploaded = CFile::set('myupload');
 
     // Let's copy newly uploaded file into 'files' directory with its original name.
     $newfile = $uploaded->copy('files/' . $uploaded->basename);
@@ -135,7 +133,7 @@ To use with Yii Framework:
      * Now let's get the contents of the directory where CFile resides
      * (supposing that it is in Yii extensions path in the 'file' subdirectory).
      */
-    $cfileDir = Yii::app()->file->set('ext.file');
+    $cfileDir = CFile::set('ext.file');
     print_r($cfileDir->contents);
 
     /*
@@ -159,21 +157,9 @@ To use with Yii Framework:
      */
     $myfile->download('myfastfile.txt', true);
 
-  * The other way to use this class is to import it into Yii:
-
-   ::
-
-    Yii::import('application.extensions.file.CFile');
-
-    if (CFile::set('files/test3.txt')->exists) {
-        echo 'Bingo-bongo!';
-    } else {
-        echo 'No-no-no.';
-    }
-
-
 To use without Yii simply import CFileHelper.php when needed and use CFileHelper::get() to get CFile object for a filesystem resource.
 
+EDIT: This version always returns a CFile instance even when CFileHelper::get() is used. This allows us to make some public methods static.
    ::
 
     $cf_file = CFileHelper::get('files/test.txt');  // $cf_cile now contains CFile object, use it as required.
