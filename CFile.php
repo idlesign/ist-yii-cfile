@@ -189,6 +189,15 @@ class CFile extends CApplicationComponent {
     }
 
     /**
+	 * Wrapper for getPathOfAlias
+	 */
+	private static function getPathOfAliasWrapper($alias) {
+		$name = self::$className;
+		
+		return $name::getPathOfAlias($alias);
+	}
+
+    /**
      * Returns filepath for a given alias.
      *
      * @param string $alias
@@ -242,7 +251,7 @@ class CFile extends CApplicationComponent {
                 if ($uploaded) {
                     $filepath = $uploaded->getTempName();
                     self::log('File "' . $filepath . '" is identified as uploaded', 'trace');
-                } elseif ($aliased_path = self::getPathOfAlias($filepath)) {
+                } elseif ($aliased_path = self::getPathOfAliasWrapper($filepath)) {
                     self::log('The string supplied to set() - "' . $filepath . '" is identified as the alias to "' . $aliased_path . '"', 'trace');
                     $filepath = $aliased_path;
                 }
@@ -1352,7 +1361,7 @@ class CFile extends CApplicationComponent {
             static $exts;
 
             if ($exts===null) {
-                $exts = require($this->getPathOfAlias('system.utils.mimeTypes') . '.php');
+                $exts = require($this->getPathOfAliasWrapper('system.utils.mimeTypes') . '.php');
             }
 
             $ext = strtolower($this->_extension);
