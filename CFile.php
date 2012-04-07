@@ -134,7 +134,7 @@ class CFile extends CApplicationComponent {
      * @return object CFile instance
      */
     public static function getInstance($filepath, $class_name=__CLASS__) {
-        if (!is_subclass_of($class_name, 'CFile')) {
+        if ($class_name!=__CLASS__ && !is_subclass_of($class_name, __CLASS__)) {
             throw new CFileException('Unable to spawn CFile object from `' . $class_name . '` class');
         }
         if (!array_key_exists($filepath, self::$_instances)) {
