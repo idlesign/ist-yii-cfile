@@ -208,6 +208,15 @@ class CFile extends CApplicationComponent {
     }
 
     /**
+	 * Wrapper for formatNumber
+	 */
+	protected static function formatNumberWrapper($number, $format) {
+		$name = self::$className;
+		
+		return $name::formatNumber($number, $format);
+	}
+
+    /**
      * Formats a given number into a given format
      * and returns it.
      *
@@ -217,7 +226,7 @@ class CFile extends CApplicationComponent {
      * @param string $format
      * @return string
      */
-    protected function formatNumber ($number, $format) {
+    protected static function formatNumber ($number, $format) {
         return Yii::app()->numberFormatter->format($format, $number);
     }
 
@@ -726,7 +735,7 @@ class CFile extends CApplicationComponent {
 
         $bytes /= pow(1024, $expo);
 
-        return $this->formatNumber($bytes, $format) . ' ' . $units[$expo];
+        return self::formatNumberWrapper($bytes, $format) . ' ' . $units[$expo];
     }
 
     /**
