@@ -73,7 +73,7 @@ class CFileHelper extends CFile {
 
     /* ================================================== */
 
-    public static function getInstance($filepath) {
+    public static function getInstance($filepath, $class_name=__CLASS__) {
         return parent::getInstance($filepath, __CLASS__);
     }
 
