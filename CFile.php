@@ -129,6 +129,11 @@ class CFile extends CApplicationComponent {
      * @var CUploadedFile object instance
      */
     private $_uploaded_inst=null;
+    /**
+	 * @var Current class name
+	 * @author Danish Satkut
+	 */
+	private static $className =  null;
 
 
     /**
@@ -152,6 +157,15 @@ class CFile extends CApplicationComponent {
         }
         return self::$_instances[$filepath];
     }
+    
+    /**
+	 * Wrapper for addLog
+	 */
+	private static function log($message, $level='info') {
+		$name = self::$className;
+		// Calls the specific addLog method
+		$name::addLog($message, $level);
+	}
 
     /**
      * Logs a message.
