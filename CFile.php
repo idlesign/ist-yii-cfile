@@ -132,6 +132,7 @@ class CFile extends CApplicationComponent {
      * @param string $filepath Path to file specified by user.
      * @param string $class_name Class name to spawn object for.
      * @return object CFile instance
+     * @throws CFileException
      */
     public static function getInstance($filepath, $class_name=__CLASS__) {
         if ($class_name!=__CLASS__ && !is_subclass_of($class_name, __CLASS__)) {
@@ -190,9 +191,10 @@ class CFile extends CApplicationComponent {
      *
      * @param string $filepath Path to the file specified by user, if not set
      * exception is raised
-     * @param boolean $greedy If True file properties (such as 'Size', 'Owner',
+     * @param bool $greedy If True file properties (such as 'Size', 'Owner',
      * 'Permission', etc.) would be autoloaded
      * @return object CFile instance for the specified filesystem object
+     * @throws CFileException
      */
     public function set($filepath, $greedy=False) {
         if (trim($filepath)!='') {
@@ -1184,16 +1186,21 @@ class CFile extends CApplicationComponent {
      * Note: If you want to serve big or even huge files you are definetly
      * advised to turn this option on and setup your server software
      * appropriately, if not to say that it is your only alternative :).
+     * @param null|string $content_type Should be used to override content type
+     * on demand.
      * @return bool|null Returns bool or outputs file contents with headers.
      */
-    public function send($fake_name=null, $server_handled=False) {
+    public function send($fake_name=null, $server_handled=False, $content_type=null) {
         if ($this->getIsFile()) {
             if ($this->getReadable() && !headers_sent()){
 
-                $ctype = $this->getMimeType();
-
-                if (!$ctype) {
-                    $ctype = 'application/octet-stream';
+                if ($content_type) {
+                    $ctype = $content_type;
+                } else {
+                    $ctype = $this->getMimeType();
+                    if (!$ctype) {
+                        $ctype = 'application/octet-stream';
+                    }
                 }
 
                 if ($fake_name) {
@@ -1243,12 +1250,13 @@ class CFile extends CApplicationComponent {
     /**
      * Alias for {@link send}.
      *
-     * @param null $fake_name
+     * @param null|string $fake_name
      * @param bool $server_handled
+     * @param null|string $content_type
      * @return bool|null
      */
-    function download($fake_name=null, $server_handled=False){
-        return $this->send($fake_name, $server_handled);
+    function download($fake_name=null, $server_handled=False, $content_type=null){
+        return $this->send($fake_name, $server_handled, $content_type);
     }
 
     // Modified methods taken from Yii CFileHelper.php are listed below
