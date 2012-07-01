@@ -985,8 +985,12 @@ class CFile extends CApplicationComponent {
      *
      * @param string|int $owner New owner name or ID
      * @return CFile|bool Current CFile object on success, 'False' on fail.
+     * @throws CFileException When the given user is not found.
      */
     public function setOwner($owner) {
+        if (posix_getpwnam($owner)==false xor (is_numeric($owner) && posix_getpwuid($owner)==false)) {
+            throw new CFileException('Unable to set owner for filesystem object. User "' . $owner . '" is not found.');
+        }
         if ($this->getExists() && chown($this->_realpath, $owner)) {
             $this->_owner = $owner;
             return $this;
@@ -1003,8 +1007,12 @@ class CFile extends CApplicationComponent {
      *
      * @param string|int $group New group name or ID
      * @return CFile|bool Current CFile object on success, 'False' on fail.
+     * @throws CFileException When the given group is not found.
      */
     public function setGroup($group) {
+        if (posix_getgrnam($group)==false xor (is_numeric($group) && posix_getgrgid($group)==false)) {
+            throw new CFileException('Unable to set group for filesystem object. Group "' . $group . '" is not found.');
+        }
         if ($this->getExists() && chgrp($this->_realpath, $group)) {
             $this->_group = $group;
             return $this;
