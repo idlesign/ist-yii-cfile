@@ -273,7 +273,7 @@ class CFile extends CApplicationComponent {
             $this->_filename = $pathinfo['filename'];
         }
 
-        if (key_exists('extension', $pathinfo)) {
+        if (array_key_exists('extension', $pathinfo)) {
             $this->_extension = $pathinfo['extension'];
         } else {
             $this->_extension = null;
