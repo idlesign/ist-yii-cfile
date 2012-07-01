@@ -3,9 +3,6 @@
 require_once '../CFileHelper.php';
 
 
-define('TESTS_DIR', dirname(__FILE__));
-
-
 class CFileTests extends PHPUnit_Framework_TestCase {
 
     public function setUp() {
@@ -55,6 +52,20 @@ class CFileTests extends PHPUnit_Framework_TestCase {
         $this->assertNotEquals($cf->setOwner($owner_id), False);
     }
 
+    public function testSetOwnerRecursive() {
+        $cf = $this->cf;
+        $cf->createDir();
+
+        $cf_sub = CFileHelper::get($cf->getRealPath() . '/' . uniqid('sub'));
+        $cf_sub->create();
+
+        $owner_name = $cf->getOwner();
+
+        $this->assertNotEquals($cf->setOwner($owner_name, True), False);
+
+        $cf_sub->delete();
+    }
+
     public function testSetGroup() {
         $cf = $this->cf;
         $cf->create();
@@ -74,6 +85,20 @@ class CFileTests extends PHPUnit_Framework_TestCase {
         $cf->setGroup(4567890123);
 
         $this->assertNotEquals($cf->setGroup($group_id), False);
+    }
+
+    public function testSetGroupRecursive() {
+        $cf = $this->cf;
+        $cf->createDir();
+
+        $cf_sub = CFileHelper::get($cf->getRealPath() . '/' . uniqid('sub'));
+        $cf_sub->create();
+
+        $group_name = $cf->getGroup();
+
+        $this->assertNotEquals($cf->setGroup($group_name, True), False);
+
+        $cf_sub->delete();
     }
 
 }

@@ -747,11 +747,10 @@ class CFile extends CApplicationComponent {
      * List files and directories inside the specified path if filesystem object
      * is a directory.
      *
-     * @param boolean $recursive If 'True' method would return all directory
-     * descendants
+     * @param boolean $recursive If True method would return all directory descendants.
      * @param string $filter Filter to be applied to all directory descendants.
      * Could be a string, or an array of strings (perl regexp supported).
-     * @return string|bool Data  read or 'False' on fail.
+     * @return string|array|bool Data read for files, or directory contents names array. False on fail.
      */
     public function getContents($recursive=False, $filter=null) {
         if ($this->getReadable()) {
@@ -760,9 +759,7 @@ class CFile extends CApplicationComponent {
                     return $contents;
                 }
             } else {
-                if ($contents = $this->dirContents($this->_realpath, $recursive, $filter)) {
-                    return $contents;
-                }
+                return $this->dirContents($this->_realpath, $recursive, $filter);
             }
         }
         $this->addLog('Unable to get filesystem object contents' . ($filter!==null ? ' *using supplied filter*' : ''));
@@ -984,16 +981,33 @@ class CFile extends CApplicationComponent {
      * For UNIX systems.
      *
      * @param string|int $owner New owner name or ID
+     * @param bool $recursive Apply owner to directory contents flag.
      * @return CFile|bool Current CFile object on success, 'False' on fail.
      * @throws CFileException When the given user is not found.
      */
-    public function setOwner($owner) {
+    public function setOwner($owner, $recursive=False) {
         if (posix_getpwnam($owner)==false xor (is_numeric($owner) && posix_getpwuid($owner)==false)) {
             throw new CFileException('Unable to set owner for filesystem object. User "' . $owner . '" is not found.');
         }
-        if ($this->getExists() && chown($this->_realpath, $owner)) {
-            $this->_owner = $owner;
-            return $this;
+        if ($this->getExists()) {
+            if ($this->getIsDir() && $recursive) {
+                $success = True;
+                $contents = $this->getContents(True);
+                foreach ($contents as $filepath) {
+                    if (!chown($filepath, $owner)) {
+                        $this->addLog('Unable to set owner for "' . $filepath . '" to "' . $owner . '"');
+                        $success = False;
+                    }
+                }
+                if ($success) {
+                    return $this;
+                }
+            } else {
+                if (chown($this->_realpath, $owner)) {
+                    $this->_owner = $owner;
+                    return $this;
+                }
+            }
         }
 
         $this->addLog('Unable to set owner for filesystem object to "' . $owner . '"');
@@ -1006,16 +1020,33 @@ class CFile extends CApplicationComponent {
      * For UNIX systems.
      *
      * @param string|int $group New group name or ID
+     * @param bool $recursive Apply group to directory contents flag.
      * @return CFile|bool Current CFile object on success, 'False' on fail.
      * @throws CFileException When the given group is not found.
      */
-    public function setGroup($group) {
+    public function setGroup($group, $recursive=False) {
         if (posix_getgrnam($group)==false xor (is_numeric($group) && posix_getgrgid($group)==false)) {
             throw new CFileException('Unable to set group for filesystem object. Group "' . $group . '" is not found.');
         }
-        if ($this->getExists() && chgrp($this->_realpath, $group)) {
-            $this->_group = $group;
-            return $this;
+        if ($this->getExists()) {
+            if ($this->getIsDir() && $recursive) {
+                $success = True;
+                $contents = $this->getContents(True);
+                foreach ($contents as $filepath) {
+                    if (!chgrp($filepath, $group)) {
+                        $this->addLog('Unable to set group for "' . $filepath . '" to "' . $group . '"');
+                        $success = False;
+                    }
+                }
+                if ($success) {
+                    return $this;
+                }
+            } else {
+                if (chgrp($this->_realpath, $group)) {
+                    $this->_group = $group;
+                    return $this;
+                }
+            }
         }
 
         $this->addLog('Unable to set group for filesystem object to "' . $group . '"');
