@@ -986,12 +986,17 @@ class CFile extends CApplicationComponent {
      * @throws CFileException When the given user is not found.
      */
     public function setOwner($owner, $recursive=False) {
-        if (posix_getpwnam($owner)==false xor (is_numeric($owner) && posix_getpwuid($owner)==false)) {
+        if (posix_getpwnam($owner)==False xor (is_numeric($owner) && posix_getpwuid($owner)==False)) {
             throw new CFileException('Unable to set owner for filesystem object. User "' . $owner . '" is not found.');
         }
         if ($this->getExists()) {
-            if ($this->getIsDir() && $recursive) {
-                $success = True;
+
+            $success = chown($this->_realpath, $owner);
+            if ($success) {
+                $this->_owner = $owner;
+            }
+
+            if ($success && $this->getIsDir() && $recursive) {
                 $contents = $this->getContents(True);
                 foreach ($contents as $filepath) {
                     if (!chown($filepath, $owner)) {
@@ -999,14 +1004,10 @@ class CFile extends CApplicationComponent {
                         $success = False;
                     }
                 }
-                if ($success) {
-                    return $this;
-                }
-            } else {
-                if (chown($this->_realpath, $owner)) {
-                    $this->_owner = $owner;
-                    return $this;
-                }
+            }
+
+            if ($success) {
+                return $this;
             }
         }
 
@@ -1025,12 +1026,17 @@ class CFile extends CApplicationComponent {
      * @throws CFileException When the given group is not found.
      */
     public function setGroup($group, $recursive=False) {
-        if (posix_getgrnam($group)==false xor (is_numeric($group) && posix_getgrgid($group)==false)) {
+        if (posix_getgrnam($group)==False xor (is_numeric($group) && posix_getgrgid($group)==False)) {
             throw new CFileException('Unable to set group for filesystem object. Group "' . $group . '" is not found.');
         }
         if ($this->getExists()) {
-            if ($this->getIsDir() && $recursive) {
-                $success = True;
+
+            $success = chgrp($this->_realpath, $group);
+            if ($success) {
+                $this->_group = $group;
+            }
+
+            if ($success && $this->getIsDir() && $recursive) {
                 $contents = $this->getContents(True);
                 foreach ($contents as $filepath) {
                     if (!chgrp($filepath, $group)) {
@@ -1038,14 +1044,10 @@ class CFile extends CApplicationComponent {
                         $success = False;
                     }
                 }
-                if ($success) {
-                    return $this;
-                }
-            } else {
-                if (chgrp($this->_realpath, $group)) {
-                    $this->_group = $group;
-                    return $this;
-                }
+            }
+
+            if ($success) {
+                return $this;
             }
         }
 
