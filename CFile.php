@@ -978,7 +978,7 @@ class CFile extends CApplicationComponent {
     /**
      * Sets the current filesystem object owner, updates $_owner property
      * on success.
-     * For UNIX systems.
+     * For POSIX systems.
      *
      * @param string|int $owner New owner name or ID
      * @param bool $recursive Apply owner to directory contents flag.
@@ -986,6 +986,11 @@ class CFile extends CApplicationComponent {
      * @throws CFileException When the given user is not found.
      */
     public function setOwner($owner, $recursive=False) {
+        // Makes no sense on non-posix.
+        if (!function_exists('posix_uname')) {
+            return $this;
+        }
+
         if (posix_getpwnam($owner)==False xor (is_numeric($owner) && posix_getpwuid($owner)==False)) {
             throw new CFileException('Unable to set owner for filesystem object. User "' . $owner . '" is not found.');
         }
@@ -1018,7 +1023,7 @@ class CFile extends CApplicationComponent {
     /**
      * Sets the current filesystem object group, updates $_group property
      * on success.
-     * For UNIX systems.
+     * For POSIX systems.
      *
      * @param string|int $group New group name or ID
      * @param bool $recursive Apply group to directory contents flag.
@@ -1026,6 +1031,11 @@ class CFile extends CApplicationComponent {
      * @throws CFileException When the given group is not found.
      */
     public function setGroup($group, $recursive=False) {
+        // Makes no sense on non-posix.
+        if (!function_exists('posix_uname')) {
+            return $this;
+        }
+
         if (posix_getgrnam($group)==False xor (is_numeric($group) && posix_getgrgid($group)==False)) {
             throw new CFileException('Unable to set group for filesystem object. Group "' . $group . '" is not found.');
         }
