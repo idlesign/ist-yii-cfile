@@ -996,7 +996,7 @@ class CFile extends CApplicationComponent {
         }
         if ($this->getExists()) {
 
-            $success = chown($this->_realpath, $owner);
+            $success = @chown($this->_realpath, $owner);
             if ($success) {
                 $this->_owner = $owner;
             }
@@ -1004,7 +1004,7 @@ class CFile extends CApplicationComponent {
             if ($success && $this->getIsDir() && $recursive) {
                 $contents = $this->getContents(True);
                 foreach ($contents as $filepath) {
-                    if (!chown($filepath, $owner)) {
+                    if (!@chown($filepath, $owner)) {
                         $this->addLog('Unable to set owner for "' . $filepath . '" to "' . $owner . '"');
                         $success = False;
                     }
@@ -1041,7 +1041,7 @@ class CFile extends CApplicationComponent {
         }
         if ($this->getExists()) {
 
-            $success = chgrp($this->_realpath, $group);
+            $success = @chgrp($this->_realpath, $group);
             if ($success) {
                 $this->_group = $group;
             }
@@ -1049,7 +1049,7 @@ class CFile extends CApplicationComponent {
             if ($success && $this->getIsDir() && $recursive) {
                 $contents = $this->getContents(True);
                 foreach ($contents as $filepath) {
-                    if (!chgrp($filepath, $group)) {
+                    if (!@chgrp($filepath, $group)) {
                         $this->addLog('Unable to set group for "' . $filepath . '" to "' . $group . '"');
                         $success = False;
                     }
