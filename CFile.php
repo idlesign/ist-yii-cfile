@@ -978,22 +978,24 @@ class CFile extends CApplicationComponent {
     /**
      * Sets the current filesystem object owner, updates $_owner property
      * on success.
+     *
      * For POSIX systems.
+     *
+     * Asserts that user exists before process if posix_ functions are available.
      *
      * @param string|int $owner New owner name or ID
      * @param bool $recursive Apply owner to directory contents flag.
      * @return CFile|bool Current CFile object on success, 'False' on fail.
-     * @throws CFileException When the given user is not found.
+     * @throws CFileException When the given user is not found, if posix_ functions are available.
      */
     public function setOwner($owner, $recursive=False) {
-        // Makes no sense on non-posix.
-        if (!function_exists('posix_uname')) {
-            return $this;
+
+        if (function_exists('posix_getpwnam') && function_exists('posix_getpwuid')) {
+            if (posix_getpwnam($owner)==False xor (is_numeric($owner) && posix_getpwuid($owner)==False)) {
+                throw new CFileException('Unable to set owner for filesystem object. User "' . $owner . '" is not found.');
+            }
         }
 
-        if (posix_getpwnam($owner)==False xor (is_numeric($owner) && posix_getpwuid($owner)==False)) {
-            throw new CFileException('Unable to set owner for filesystem object. User "' . $owner . '" is not found.');
-        }
         if ($this->getExists()) {
 
             $success = @chown($this->_realpath, $owner);
@@ -1023,22 +1025,24 @@ class CFile extends CApplicationComponent {
     /**
      * Sets the current filesystem object group, updates $_group property
      * on success.
+     *
      * For POSIX systems.
+     *
+     * Asserts that group exists before process if posix_ functions are available.
      *
      * @param string|int $group New group name or ID
      * @param bool $recursive Apply group to directory contents flag.
      * @return CFile|bool Current CFile object on success, 'False' on fail.
-     * @throws CFileException When the given group is not found.
+     * @throws CFileException When the given group is not found, if posix_ functions are available.
      */
     public function setGroup($group, $recursive=False) {
-        // Makes no sense on non-posix.
-        if (!function_exists('posix_uname')) {
-            return $this;
+
+        if (function_exists('posix_getgrnam') && function_exists('posix_getgrgid')) {
+            if (posix_getgrnam($group)==False xor (is_numeric($group) && posix_getgrgid($group)==False)) {
+                throw new CFileException('Unable to set group for filesystem object. Group "' . $group . '" is not found.');
+            }
         }
 
-        if (posix_getgrnam($group)==False xor (is_numeric($group) && posix_getgrgid($group)==False)) {
-            throw new CFileException('Unable to set group for filesystem object. Group "' . $group . '" is not found.');
-        }
         if ($this->getExists()) {
 
             $success = @chgrp($this->_realpath, $group);
@@ -1068,6 +1072,7 @@ class CFile extends CApplicationComponent {
     /**
      * Sets the current filesystem object permissions, updates $_permissions
      * property on success.
+     *
      * For UNIX systems.
      *
      * @param string $permissions New filesystem object permissions in numeric
