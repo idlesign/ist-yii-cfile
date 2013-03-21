@@ -9,7 +9,7 @@
  *
  * @author idle sign <idlesign@yandex.ru>
  * @link http://www.yiiframework.com/extension/cfile/
- * @copyright Copyright &copy; 2009-2012 Igor 'idle sign' Starikov
+ * @copyright Copyright &copy; 2009-2013 Igor 'idle sign' Starikov
  * @license LICENSE
  */
 
@@ -31,8 +31,7 @@ class CFile extends CApplicationComponent {
      */
     private $_filepath;
     /**
-     * @var string real filesystem object path figured by script on the basis
-     * of $_filepath
+     * @var string real filesystem object path figured by script on the basis of $_filepath
      */
     private $_realpath;
     /**
@@ -40,13 +39,11 @@ class CFile extends CApplicationComponent {
      */
     private $_exists;
     /**
-     * @var boolean 'True' if filesystem object described by $_realpath is
-     * a regular file
+     * @var boolean 'True' if filesystem object described by $_realpath is a regular file
      */
     private $_is_file = False;
     /**
-     * @var boolean 'True' if filesystem object described by $_realpath is
-     * a directory
+     * @var boolean 'True' if filesystem object described by $_realpath is a directory
      */
     private $_is_dir = False;
     /**
@@ -54,48 +51,41 @@ class CFile extends CApplicationComponent {
      */
     private $_is_uploaded = False;
     /**
-     * @var boolean 'True' if filesystem object described by $_realpath is
-     * readable
+     * @var boolean 'True' if filesystem object described by $_realpath is readable
      */
     private $_readable;
     /**
-     * @var boolean 'True' if filesystem object described by $_realpath
-     * writeable
+     * @var boolean 'True' if filesystem object described by $_realpath writeable
      */
     private $_writeable;
     /**
-     * @var string basename of the file (eg. 'myfile.htm'
-     * for '/var/www/htdocs/files/myfile.htm')
+     * @var string basename of the file (e.g.: 'myfile.htm' for '/var/www/htdocs/files/myfile.htm')
      */
     private $_basename;
     /**
-     * @var string name of the file (eg. 'myfile'
-     * for '/var/www/htdocs/files/myfile.htm')
+     * @var string name of the file (e.g.: 'myfile' for '/var/www/htdocs/files/myfile.htm')
      */
     private $_filename;
     /**
      * @var string directory name of the filesystem object
-     * (eg. '/var/www/htdocs/files' for '/var/www/htdocs/files/myfile.htm')
+     * (e.g.: '/var/www/htdocs/files' for '/var/www/htdocs/files/myfile.htm')
      */
     private $_dirname;
     /**
-     * @var string file extension(eg. 'htm'
-     * for '/var/www/htdocs/files/myfile.htm')
+     * @var string file extension(e.g.: 'htm' for '/var/www/htdocs/files/myfile.htm')
      */
     private $_extension;
     /**
-     * @var string file extension(eg. 'text/html'
-     * for '/var/www/htdocs/files/myfile.htm')
+     * @var string file extension(e.g.: 'text/html' for '/var/www/htdocs/files/myfile.htm')
      */
     private $_mime_type;
     /**
-     * @var integer the time the filesystem object was last modified
-     * (Unix timestamp eg. '1213760802')
+     * @var integer the time the filesystem object was last modified (Unix timestamp e.g.: '1213760802')
      */
     private $_time_modified;
     /**
-     * @var string filesystem object size formatted (eg. '70.4 KB') or
-     * in bytes (eg. '72081') see {@link getSize} parameters
+     * @var string filesystem object size formatted (e.g.: '70.4 KB') or in bytes (e.g.: '72081')
+     * see {@link getSize} parameters
      */
     private $_size;
     /**
@@ -103,17 +93,17 @@ class CFile extends CApplicationComponent {
      */
     private $_is_empty;
     /**
-     * @var int|string filesystem object owner name (eg. 'idle') or
-     * in ID (eg. '1000') see {@link getOwner} parameters
+     * @var int|string filesystem object owner name (e.g.: 'idle') or in ID (e.g.: '1000')
+     *     see {@link getOwner} parameters
      */
     private $_owner;
     /**
-     * @var int|string filesystem object group name (eg. 'apache') or
-     * in ID (eg. '127') see {@link getGroup} parameters
+     * @var int|string filesystem object group name (e.g.: 'apache') or in ID (e.g.: '127')
+     *     see {@link getGroup} parameters
      */
     private $_group;
     /**
-     * @var string filesystem object permissions (considered octal eg. '0755')
+     * @var string filesystem object permissions (considered octal e.g.: '0755')
      */
     private $_permissions;
     /**
@@ -148,8 +138,8 @@ class CFile extends CApplicationComponent {
      * Logs a message.
      *
      * @param string $message Message to be logged
-     * @param string $level Level of the message (e.g. 'trace', 'warning',
-     * 'error', 'info', see CLogger constants definitions)
+     * @param string $level Level of the message (e.g. 'trace', 'warning', 'error', 'info',
+     *     see CLogger constants definitions)
      */
     protected function addLog($message, $level='info') {
         Yii::log($message.' (obj: ' . $this->getRealPath() . ')', $level, 'ext.file');
@@ -166,8 +156,7 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Formats a given number into a given format
-     * and returns it.
+     * Formats a given number into a given format and returns it.
      *
      * See {@link CNumberFormatter}.
      *
@@ -181,18 +170,14 @@ class CFile extends CApplicationComponent {
 
 
     /**
-     * Basic CFile method. Sets CFile object to work with specified filesystem
-     * object.
-     * Essentially path supplied by user is resolved into real path (see
-     * {@link getRealPath}), all the other property getting methods should use
-     * that real path.
+     * Basic CFile method. Sets CFile object to work with specified filesystem object.
+     * Essentially path supplied by user is resolved into real path (see {@link getRealPath}), all the other property
+     * getting methods should use that real path.
      * Uploaded files are supported through {@link CUploadedFile} Yii class.
      * Path aliases are supported through {@link getPathOfAlias} Yii method.
      *
-     * @param string $filepath Path to the file specified by user, if not set
-     * exception is raised
-     * @param bool $greedy If True file properties (such as 'Size', 'Owner',
-     * 'Permission', etc.) would be autoloaded
+     * @param string $filepath Path to the file specified by user, if not set exception is raised
+     * @param bool $greedy If True file properties (such as 'Size', 'Owner', 'Permission', etc.) would be autoloaded
      * @return object CFile instance for the specified filesystem object
      * @throws CFileException
      */
@@ -245,8 +230,8 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Populates basic CFile properties (i.e. 'Dirname', 'Basename', etc.)
-     * using values resolved by pathinfo() php function.
+     * Populates basic CFile properties (i.e. 'Dirname', 'Basename', etc.) using values resolved by pathinfo()
+     * php function.
      * Detects filesystem object type (file, directory).
      */
     private function pathInfo() {
@@ -281,8 +266,8 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Returns real filesystem object path figured by script
-     * (see {@link realPath}) on the basis of user supplied $_filepath.
+     * Returns real filesystem object path figured by script (see {@link realPath}) on the basis of user
+     * supplied $_filepath.
      * If $_realpath property is set, returned value is read from that property.
      *
      * @param string $dir_separator Directory separator char (depends upon OS)
@@ -300,8 +285,7 @@ class CFile extends CApplicationComponent {
      * Base real filesystem object path resolving method.
      * Returns real path resolved from the supplied path.
      *
-     * @param string $supplied_path Path from which real filesystem object path
-     * should be resolved
+     * @param string $supplied_path Path from which real filesystem object path should be resolved
      * @param string $dir_separator Directory separator char (depends upon OS)
      * @return string Real file path
      */
@@ -352,11 +336,10 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Tests current filesystem object existance and returns boolean
-     * (see {@link exists}).
+     * Tests current filesystem object existence and returns boolean (see {@link exists}).
      * If $_exists property is set, returned value is read from that property.
      *
-     * @return boolean 'True' if file exists, overwise 'False'
+     * @return boolean 'True' if file exists, otherwise 'False'
      */
     public function getExists() {
         if (!isset($this->_exists)) {
@@ -367,24 +350,20 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Returns filesystem object type for the current file
-     * (see {@link pathInfo}).
+     * Returns filesystem object type for the current file (see {@link pathInfo}).
      * Tells whether filesystem object is a regular file.
      *
-     * @return boolean 'True' if filesystem object is a regular file,
-     * overwise 'False'
+     * @return boolean 'True' if filesystem object is a regular file, otherwise 'False'
      */
     public function getIsFile() {
         return $this->_is_file;
     }
 
     /**
-     * Returns filesystem object type for the current file
-     * (see {@link pathInfo}).
+     * Returns filesystem object type for the current file (see {@link pathInfo}).
      * Tells whether filesystem object is a directory.
      *
-     * @return boolean 'True' if filesystem object is a directory,
-     * overwise 'False'
+     * @return boolean 'True' if filesystem object is a directory, otherwise 'False'
      */
     public function getIsDir() {
         return $this->_is_dir;
@@ -393,7 +372,7 @@ class CFile extends CApplicationComponent {
     /**
      * Tells whether file is uploaded through a web form.
      *
-     * @return boolean 'True' if file is uploaded, overwise 'False'
+     * @return boolean 'True' if file is uploaded, otherwise 'False'
      */
     public function getIsUploaded() {
         return $this->_is_uploaded;
@@ -404,7 +383,7 @@ class CFile extends CApplicationComponent {
      * Directory considered empty if it doesn't contain descendants.
      * File considered empty if its size is 0 bytes.
      *
-     * @return boolean 'True' if file is a directory, overwise 'False'
+     * @return boolean 'True' if file is a directory, otherwise 'False'
      */
     public function getIsEmpty() {
         if (!isset($this->_is_empty)) {
@@ -419,11 +398,10 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Tests whether the current filesystem object is readable and returns
-     * boolean.
+     * Tests whether the current filesystem object is readable and returns boolean.
      * If $_readable property is set, returned value is read from that property.
      *
-     * @return boolean 'True' if filesystem object is readable, overwise 'False'
+     * @return boolean 'True' if filesystem object is readable, otherwise 'False'
      */
     public function getReadable() {
         if (!isset($this->_readable)) {
@@ -434,13 +412,10 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Tests whether the current filesystem object is readable and returns
-     * boolean.
-     * If $_writeable property is set, returned value is read from that
-     * property.
+     * Tests whether the current filesystem object is readable and returns boolean.
+     * If $_writeable property is set, returned value is read from that property.
      *
-     * @return boolean 'True' if filesystem object is writeable,
-     * overwise 'False'
+     * @return boolean 'True' if filesystem object is writeable, otherwise 'False'
      */
     public function getWriteable() {
         if (!isset($this->_writeable)) {
@@ -451,10 +426,10 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Base filesystem object existance resolving method.
-     * Tests current filesystem object existance and returns boolean.
+     * Base filesystem object existence resolving method.
+     * Tests current filesystem object existence and returns boolean.
      *
-     * @return boolean 'True' if filesystem object exists, overwise 'False'
+     * @return boolean 'True' if filesystem object exists, otherwise 'False'
      */
     private function exists() {
         $this->addLog('Filesystem object availability test: ' . $this->_realpath, 'trace');
@@ -476,8 +451,7 @@ class CFile extends CApplicationComponent {
     /**
      * Creates empty file if the current file doesn't exist.
      *
-     * @return CFile|bool Updated the current CFile object on success, 'False'
-     * on fail.
+     * @return CFile|bool Updated the current CFile object on success, 'False' on fail.
      */
     public function create() {
         if (!$this->getExists()) {
@@ -495,14 +469,12 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Creates empty directory defined either through {@link set} or through the
-     * $directory parameter.
+     * Creates empty directory defined either through {@link set} or through the $directory parameter.
      *
      * @param int|string $permissions Access permissions for the directory
-     * @param null|string $directory Parameter used to create directory other than
-     * supplied by {@link set} method of the CFile
-     * @return bool|CFile Updated the current CFile object on success, 'False'
-     * on fail.
+     * @param null|string $directory Parameter used to create directory other than supplied by {@link set} method
+     *     of the CFile
+     * @return bool|CFile Updated the current CFile object on success, 'False' on fail.
      */
     public function createDir($permissions=0754, $directory=null) {
         if ($directory===null) {
@@ -562,8 +534,7 @@ class CFile extends CApplicationComponent {
      * Returned value depends upon $getName parameter value.
      * If $_owner property is set, returned value is read from that property.
      *
-     * @param boolean $get_name Defaults to 'True', meaning that owner name
-     * instead of ID should be returned.
+     * @param boolean $get_name Defaults to 'True', meaning that owner name instead of ID should be returned.
      * @return int|string|bool Owner name, or ID if $getName set to 'False'
      */
     public function getOwner($get_name=True) {
@@ -584,8 +555,7 @@ class CFile extends CApplicationComponent {
      * Returned value depends upon $getName parameter value.
      * If $_group property is set, returned value is read from that property.
      *
-     * @param boolean $get_name Defaults to 'True', meaning that group name
-     * instead of ID should be returned.
+     * @param boolean $get_name Defaults to 'True', meaning that group name instead of ID should be returned.
      * @return int|string|bool Group name, or ID if $getName set to 'False'
      */
     public function getGroup($get_name=True) {
@@ -603,8 +573,7 @@ class CFile extends CApplicationComponent {
 
     /**
      * Returns permissions of current filesystem object (UNIX systems).
-     * If $_permissions property is set, returned value is read from that
-     * property.
+     * If $_permissions property is set, returned value is read from that property.
      *
      * @return string Filesystem object permissions in octal format (i.e. '0755')
      */
@@ -623,8 +592,8 @@ class CFile extends CApplicationComponent {
      * Uses {@link dirSize} method for directory size calculation.
      *
      * @param string|bool $format Number format or 'False'
-     * @return string|int Filesystem object size formatted (eg. '70.4 KB') or in
-     * bytes (eg. '72081') if $format set to 'False'
+     * @return string|int Filesystem object size formatted (e.g.: '70.4 KB') or in bytes (e.g.: '72081') if $format
+     *     set to 'False'
      */
     public function getSize($format='0.00'){
 
@@ -645,8 +614,7 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Calculates the current directory size recursively fetching sizes of
-     * all descendant files.
+     * Calculates the current directory size recursively fetching sizes of all descendant files.
      *
      * This method is used internally and only for folders.
      * See {@link getSize} method params for detailed information.
@@ -673,7 +641,7 @@ class CFile extends CApplicationComponent {
      * @return string Filesystem object size in human readable format
      */
     private function formatFileSize($bytes, $format='0.00') {
-        $units = array('B', 'KB', 'MB', 'GB', 'TB', 'PB');
+        $units = array('B', 'kB', 'MB', 'GB', 'TB', 'PB');
 
         $bytes = max($bytes, 0);
         $expo = floor(($bytes ? log($bytes) : 0) / log(1024));
@@ -688,7 +656,7 @@ class CFile extends CApplicationComponent {
      * Returns the current file last modified time.
      * Returned Unix timestamp could be passed to php date() function.
      *
-     * @return integer Last modified time Unix timestamp (eg. '1213760802')
+     * @return integer Last modified time Unix timestamp (e.g.: '1213760802')
      */
     public function getTimeModified() {
         if (empty($this->_time_modified)) {
@@ -699,8 +667,8 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Returns the current file extension from $_extension property set
-     * by {@link pathInfo} (eg. 'htm' for '/var/www/htdocs/files/myfile.htm').
+     * Returns the current file extension from $_extension property set by {@link pathInfo} 
+     * (e.g.: 'htm' for '/var/www/htdocs/files/myfile.htm').
      *
      * @return string Current file extension without the leading dot
      */
@@ -709,9 +677,8 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Returns the current file basename (file name plus extension) from
-     * $_basename property set by {@link pathInfo}
-     * (eg. 'myfile.htm' for '/var/www/htdocs/files/myfile.htm').
+     * Returns the current file basename (file name plus extension) from $_basename property set by {@link pathInfo}
+     * (e.g.: 'myfile.htm' for '/var/www/htdocs/files/myfile.htm').
      *
      * @return string Current file basename
      */
@@ -720,9 +687,8 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Returns the current file name (without extension) from $_filename
-     * property set by {@link pathInfo}
-     * (eg. 'myfile' for '/var/www/htdocs/files/myfile.htm')
+     * Returns the current file name (without extension) from $_filename property set by {@link pathInfo}
+     * (e.g.: 'myfile' for '/var/www/htdocs/files/myfile.htm')
      *
      * @return string Current file name
      */
@@ -731,9 +697,8 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Returns the current file directory name (without final slash) from
-     * $_dirname property set by {@link pathInfo}
-     * (eg. '/var/www/htdocs/files' for '/var/www/htdocs/files/myfile.htm')
+     * Returns the current file directory name (without final slash) from $_dirname property set by {@link pathInfo}
+     * (e.g.: '/var/www/htdocs/files' for '/var/www/htdocs/files/myfile.htm')
      *
      * @return string Current file directory name
      */
@@ -744,12 +709,11 @@ class CFile extends CApplicationComponent {
     /**
      * Returns the current filesystem object contents.
      * Reads data from filesystem object if it is a regular file.
-     * List files and directories inside the specified path if filesystem object
-     * is a directory.
+     * List files and directories inside the specified path if filesystem object is a directory.
      *
      * @param boolean $recursive If True method would return all directory descendants.
-     * @param string $filter Filter to be applied to all directory descendants.
-     * Could be a string, or an array of strings (perl regexp supported).
+     * @param string $filter Filter to be applied to all directory descendants. Could be a string, or an array
+     *     of strings (perl regexp are supported, if started with '/').
      * @return string|array|bool Data read for files, or directory contents names array. False on fail.
      */
     public function getContents($recursive=False, $filter=null) {
@@ -770,11 +734,11 @@ class CFile extends CApplicationComponent {
      * Gets directory contents (descendant files and folders).
      *
      * @param null|string $directory Initial directory to get descendants for
-     * @param bool $recursive If 'True' method would return all descendants
-     * recursively, otherwise just immediate descendants
-     * @param null|string $filter Filter to be applied to all directory descendants.
-     * Could be a string, or an array of strings (perl regexp supported).
-     * See {@link filterPassed} method for further information on filters.
+     * @param bool $recursive If 'True' method would return all descendants recursively, otherwise just immediate
+     *     descendants
+     * @param null|string $filter Filter to be applied to all directory descendants. Could be a string, or an array
+     *     of strings (perl regexp are supported, if started with '/').
+     *     See {@link filterPassed} method for further information on filters.
      * @return array Array of descendants filepaths
      * @throws CFileException
      */
@@ -816,12 +780,10 @@ class CFile extends CApplicationComponent {
      * Used internally by {@link dirContents} method.
      *
      * @param string $str String representing filepath to be filtered
-     * @param array $filter An array of filter rules, where each rule is a
-     * string, supposing that the string starting with '/' is a regular
-     * expression. Any other string treated as an extension part of the
-     * given filepath (eg. file extension)
-     * @return boolean Returns 'True' if the supplied string matched one of
-     * the filter rules.
+     * @param array $filter An array of filter rules, where each rule is a string, supposing that the string
+     *     starting with '/' is a regular expression. Any other string treated as an extension part of the given
+     *     filepath (e.g.: file extension)
+     * @return boolean Returns 'True' if the supplied string matched one of the filter rules.
      */
     private function filterPassed($str, $filter) {
 
@@ -848,8 +810,8 @@ class CFile extends CApplicationComponent {
      *
      * @param string $contents Contents to be written
      * @param boolean $autocreate If 'True' file will be created automatically
-     * @param integer $flags Flags for file_put_contents(). E.g.: FILE_APPEND
-     * to append data to file instead of overwriting.
+     * @param integer $flags Flags for file_put_contents(). E.g.: FILE_APPEND to append data to file instead
+     *     of overwriting.
      * @return CFile|bool Current CFile object on success, 'False' on fail.
      */
     public function setContents($contents=null, $autocreate=True, $flags=0) {
@@ -875,7 +837,7 @@ class CFile extends CApplicationComponent {
      * Lazy wrapper for {@link rename}.
      * This method works only for files.
      *
-     * @param null|string $basename New file basename (eg. 'mynewfile.txt')
+     * @param null|string $basename New file basename (e.g.: 'mynewfile.txt')
      * @return bool|CFile Current CFile object on success, 'False' on fail.
      */
     public function setBasename($basename=null) {
@@ -902,7 +864,7 @@ class CFile extends CApplicationComponent {
      * Lazy wrapper for {@link rename}.
      * This method works only for files.
      *
-     * @param null|string $filename New file name (eg. 'mynewfile')
+     * @param null|string $filename New file name (e.g.: 'mynewfile')
      * @return bool|CFile Current CFile object on success, 'False' on fail.
      */
     public function setFilename($filename=null) {
@@ -930,7 +892,7 @@ class CFile extends CApplicationComponent {
      * Lazy wrapper for {@link rename}.
      * This method works only for files.
      *
-     * @param null|bool|string $extension New file extension (eg. 'txt'). Pass null to drop current extension.
+     * @param null|bool|string $extension New file extension (e.g.: 'txt'). Pass null to drop current extension.
      * @return bool|CFile Current CFile object on success, 'False' on fail.
      */
     public function setExtension($extension=False) {
@@ -942,11 +904,11 @@ class CFile extends CApplicationComponent {
 
             if ($this->getWriteable() && $extension!==False) {
                 $extension = trim($extension);
-                // drop current extension
+                // Drop current extension.
                 if ($extension===null || $extension=='') {
                     $new_base_name = $this->getFilename();
                 } else {
-                    // apply new extension
+                    // Apply new extension.
                     $extension = ltrim($extension, '.');
                     if ($this->getExtension()===null) {
                         $new_base_name = $this->getFilename() . '.' . $extension;
@@ -969,8 +931,7 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Sets the current filesystem object owner, updates $_owner property
-     * on success.
+     * Sets the current filesystem object owner, updates $_owner property on success.
      *
      * For POSIX systems.
      *
@@ -1016,8 +977,7 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Sets the current filesystem object group, updates $_group property
-     * on success.
+     * Sets the current filesystem object group, updates $_group property on success.
      *
      * For POSIX systems.
      *
@@ -1063,13 +1023,11 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Sets the current filesystem object permissions, updates $_permissions
-     * property on success.
+     * Sets the current filesystem object permissions, updates $_permissions property on success.
      *
      * For UNIX systems.
      *
-     * @param string $permissions New filesystem object permissions in numeric
-     * (octal, i.e. '0755') format
+     * @param string $permissions New filesystem object permissions in numeric (octal, i.e. '0755') format
      * @return CFile|bool Current CFile object on success, 'False' on fail.
      */
     public function setPermissions($permissions) {
@@ -1089,9 +1047,8 @@ class CFile extends CApplicationComponent {
 
     /**
      * Resolves destination path for the current filesystem object.
-     * This method enables short calls for {@link copy} & {@link rename} methods
-     * (i.e. copy('mynewfile.htm') makes a copy of the current filesystem object
-     * in the same directory, named 'mynewfile.htm')
+     * This method enables short calls for {@link copy} & {@link rename} methods (i.e. copy('mynewfile.htm') makes
+     * a copy of the current filesystem object in the same directory, named 'mynewfile.htm')
      *
      * @param string $dest Destination filesystem object name (with or w/o path)
      * @return string Resolved real destination path for the current filesystem object
@@ -1106,13 +1063,10 @@ class CFile extends CApplicationComponent {
 
     /**
      * Copies the current filesystem object to specified destination.
-     * Destination path supplied by user resolved to real destination path with
-     * {@link resolveDestPath}
+     * Destination path supplied by user resolved to real destination path with {@link resolveDestPath}
      *
-     * @param string $dest Destination path for the current filesystem
-     * object to be copied to
-     * @return CFile|bool New CFile object for newly created filesystem object on
-     * success, 'False' on fail.
+     * @param string $dest Destination path for the current filesystem object to be copied to
+     * @return CFile|bool New CFile object for newly created filesystem object on success, 'False' on fail.
      */
     public function copy($dest) {
         $dest_realpath = $this->resolveDestPath($dest);
@@ -1142,11 +1096,9 @@ class CFile extends CApplicationComponent {
 
     /**
      * Renames/moves the current filesystem object to specified destination.
-     * Destination path supplied by user resolved to real destination path with
-     * {@link resolveDestPath}
+     * Destination path supplied by user resolved to real destination path with {@link resolveDestPath}
      *
-     * @param string $dest Destination path for the current filesystem
-     * object to be renamed/moved to
+     * @param string $dest Destination path for the current filesystem object to be renamed/moved to
      * @return CFile|bool Updated current CFile object on success, 'False' on fail.
      */
     public function rename($dest) {
@@ -1155,7 +1107,7 @@ class CFile extends CApplicationComponent {
         if ($this->getWriteable() && @rename($this->_realpath, $dest_realpath)) {
             $this->_filepath = $dest;
             $this->_realpath = $dest_realpath;
-            // update pathinfo properties
+            // Update pathinfo properties.
             $this->pathInfo();
             return $this;
         }
@@ -1167,8 +1119,7 @@ class CFile extends CApplicationComponent {
     /**
      * Purges (makes empty) the current filesystem object.
      * If the current filesystem object is a file its contents set to ''.
-     * If the current filesystem object is a directory all its descendants are
-     * deleted.
+     * If the current filesystem object is a directory all its descendants are deleted.
      *
      * @param null|string $path Filesystem path to object to purge.
      * @return bool|CFile Current CFile object on success, 'False' on fail.
@@ -1205,8 +1156,7 @@ class CFile extends CApplicationComponent {
      * Deletes the current filesystem object.
      * For folders purge parameter can be supplied.
      *
-     * @param boolean $purge If 'True' folder would be deleted with all the
-     * descendants
+     * @param boolean $purge If 'True' folder would be deleted with all the descendants
      * @return boolean 'True' if sucessfully deleted, 'False' on fail
      */
     public function delete($purge=True) {
@@ -1222,21 +1172,17 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Sends the current file to browser as a download with real or faked
-     * file name.
+     * Sends the current file to browser as a download with real or faked file name.
      * Browser caching is prevented.
      * This method works only for files.
      *
-     * @param null|string $fake_name New filename (eg. 'myfileFakedName.htm')
-     * @param bool $server_handled Whether file contents delivery is handled
-     * by server internals (cf. when file contents is read and sent by php).
-     * E.g.: lighttpd and Apache with mod-sendfile can use X-Senfile header to
-     * speed up file delivery blazingly.
-     * Note: If you want to serve big or even huge files you are definetly
-     * advised to turn this option on and setup your server software
-     * appropriately, if not to say that it is your only alternative :).
-     * @param null|string $content_type Should be used to override content type
-     * on demand.
+     * @param null|string $fake_name New filename (e.g.: 'myfileFakedName.htm')
+     * @param bool $server_handled Whether file contents delivery is handled by server internals (cf. when file
+     *     contents is read and sent by php).
+     *     E.g.: lighttpd and Apache with mod-sendfile can use X-Senfile header to speed up file delivery blazingly.
+     *     Note: If you want to serve big or even huge files you are definetly advised to turn this option on and setup
+     *     your server software appropriately, if not to say that it is your only alternative :).
+     * @param null|string $content_type Should be used to override content type on demand.
      * @return bool|null Returns bool or outputs file contents with headers.
      */
     public function send($fake_name=null, $server_handled=False, $content_type=null) {
@@ -1258,7 +1204,7 @@ class CFile extends CApplicationComponent {
                     $filename = $this->getBasename();
                 }
 
-                // disable browser caching
+                // Disable browser caching.
                 header('Cache-control: private');
                 header('Pragma: private');
                 header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
@@ -1289,7 +1235,7 @@ class CFile extends CApplicationComponent {
     /**
      * Alias for {@link rename}.
      *
-     * @param $dest
+     * @param string $dest
      * @return CFile|bool
      */
     public function move($dest) {
@@ -1362,8 +1308,7 @@ class CFile extends CApplicationComponent {
      * This method will use a local map between extension name and MIME type.
      * This method works only for files.
      *
-     * @return string the MIME type. False is returned if the MIME type cannot
-     * be determined.
+     * @return string the MIME type. False is returned if the MIME type cannot be determined.
      */
     public function getMimeTypeByExtension() {
         if ($this->getIsFile()) {
