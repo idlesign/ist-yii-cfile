@@ -789,19 +789,13 @@ class CFile extends CApplicationComponent {
             if (is_string($filter)) {
                 $filter = array($filter);
             }
-
-            foreach ($filter as $key=>$rule) {
-                if ($rule[0]!='/') {
-                    $filter[$key] = ltrim($rule, '.');
-                }
-            }
         }
 
         if ($contents = @scandir($directory . DIRECTORY_SEPARATOR)) {
             foreach ($contents as $key=>$item) {
                 $contents[$key] = $directory . DIRECTORY_SEPARATOR . $item;
                 if (!in_array($item, array('.', '..'))) {
-                    if ($this->filterPassed($contents[$key], $filter)) {
+                    if ($this->filterPassed($item, $filter)) {
                         $descendants[] = $contents[$key];
                     }
 
@@ -824,7 +818,7 @@ class CFile extends CApplicationComponent {
      * @param string $str String representing filepath to be filtered
      * @param array $filter An array of filter rules, where each rule is a
      * string, supposing that the string starting with '/' is a regular
-     * expression. Any other string reated as an extension part of the
+     * expression. Any other string treated as an extension part of the
      * given filepath (eg. file extension)
      * @return boolean Returns 'True' if the supplied string matched one of
      * the filter rules.
@@ -834,14 +828,13 @@ class CFile extends CApplicationComponent {
         if ($filter!==null) {
             foreach ($filter as $rule) {
                 if ($rule[0]!='/') {
-                    $rule = '.'.$rule;
                     $passed = (bool)substr_count($str, $rule, strlen($str)-strlen($rule));
                 } else {
                     $passed = (bool)preg_match($rule, $str);
                 }
 
-                if ($passed) {
-                    break;
+                if (!$passed) {
+                    return False;
                 }
             }
         }

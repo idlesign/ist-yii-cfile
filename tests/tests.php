@@ -31,6 +31,30 @@ class CFileTests extends PHPUnit_Framework_TestCase {
         $this->assertTrue($cf->getWriteable());
     }
 
+    public function testDirContentsFiltering() {
+        $cf = $this->cf;
+        $cf->createDir();
+
+        $fnames = array(
+            'tst_a.txt',
+            'tst_b.php',
+            'tst_c.jpg',
+            'tst_d.php',
+            'tst_dd.xls',
+        );
+
+        foreach ($fnames as $fname) {
+            $result = file_put_contents($this->filepath . DIRECTORY_SEPARATOR . $fname, '');
+            $this->assertFalse($result===false);
+        }
+
+        $this->assertEquals(count($cf->getContents(true)), count($fnames));
+        $this->assertEquals(count($cf->getContents(true, 'php')), 2);
+        $this->assertEquals(count($cf->getContents(true, 'd.php')), 1);
+        $this->assertEquals(count($cf->getContents(true, '/d{1,2}/')), 2);
+
+    }
+
     public function testSetOwner() {
         $cf = $this->cf;
         $cf->create();
