@@ -776,10 +776,10 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Applies an array of filter rules to the string representing filepath.
+     * Applies an array of filter rules to the string representing file name.
      * Used internally by {@link dirContents} method.
      *
-     * @param string $str String representing filepath to be filtered
+     * @param string $str String representing file name to be filtered
      * @param array $filter An array of filter rules, where each rule is a string, supposing that the string
      *     starting with '/' is a regular expression. Any other string treated as an extension part of the given
      *     filepath (e.g.: file extension)
