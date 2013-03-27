@@ -833,6 +833,15 @@ class CFile extends CApplicationComponent {
     }
 
     /**
+     * Returns filesystem object filepath.
+     *
+     * @return string
+     */
+    public function __toString() {
+        return $this->_realpath;
+    }
+
+    /**
      * Sets basename for the current file.
      * Lazy wrapper for {@link rename}.
      * This method works only for files.

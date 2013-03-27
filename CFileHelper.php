@@ -34,6 +34,8 @@ class CApplicationComponent {
  * CFileHelper is used to access CFile functionality from environments
  * without Yii Framework.
  *
+ * Do not confuse with CFileHelper from Yii distribution!
+ *
  * Usage example:
  *
  *     $cf_file = CFileHelper::get('files/test.txt');

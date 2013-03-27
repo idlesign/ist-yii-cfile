@@ -3,7 +3,7 @@
 require_once '../CFileHelper.php';
 
 
-class CFileTests extends PHPUnit_Framework_TestCase {
+class CFileHelperTests extends PHPUnit_Framework_TestCase {
 
     public function setUp() {
         $this->filename = 'cfile_test_tmp_' . uniqid();
@@ -58,6 +58,10 @@ class CFileTests extends PHPUnit_Framework_TestCase {
         $this->assertEquals(count($cf->getContents(true, 'tst_b')), 2);
         $this->assertEquals(count($cf->getContents(true, '~d{3,4}~')), 2);
 
+    }
+
+    public function testToString() {
+        $this->assertEquals((string)$this->cf, $this->filepath);
     }
 
     public function testSetOwner() {
