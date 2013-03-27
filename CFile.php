@@ -713,7 +713,7 @@ class CFile extends CApplicationComponent {
      *
      * @param boolean $recursive If True method would return all directory descendants.
      * @param string $filter Filter to be applied to all directory descendants. Could be a string, or an array
-     *     of strings (perl regexp are supported, if started with '/').
+     *     of strings (perl regexp are supported, if started with '~').
      * @return string|array|bool Data read for files, or directory contents names array. False on fail.
      */
     public function getContents($recursive=False, $filter=null) {
@@ -737,7 +737,7 @@ class CFile extends CApplicationComponent {
      * @param bool $recursive If 'True' method would return all descendants recursively, otherwise just immediate
      *     descendants
      * @param null|string $filter Filter to be applied to all directory descendants. Could be a string, or an array
-     *     of strings (perl regexp are supported, if started with '/').
+     *     of strings (perl regexp are supported, if started with '~').
      *     See {@link filterPassed} method for further information on filters.
      * @return array Array of descendants filepaths
      * @throws CFileException
@@ -759,7 +759,7 @@ class CFile extends CApplicationComponent {
             foreach ($contents as $key=>$item) {
                 $contents[$key] = $directory . DIRECTORY_SEPARATOR . $item;
                 if (!in_array($item, array('.', '..'))) {
-                    if ($this->filterPassed($item, $filter)) {
+                    if ($this->filterPassed($contents[$key], $filter)) {
                         $descendants[] = $contents[$key];
                     }
 
@@ -776,12 +776,12 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Applies an array of filter rules to the string representing file name.
+     * Applies an array of filter rules to the string representing filepath.
      * Used internally by {@link dirContents} method.
      *
-     * @param string $str String representing file name to be filtered
+     * @param string $str String representing filepath to be filtered
      * @param array $filter An array of filter rules, where each rule is a string, supposing that the string
-     *     starting with '/' is a regular expression. Any other string treated as an extension part of the given
+     *     starting with '~' is a regular expression. Any other string treated as an extension part of the given
      *     filepath (e.g.: file extension)
      * @return boolean Returns 'True' if the supplied string matched one of the filter rules.
      */
@@ -789,8 +789,8 @@ class CFile extends CApplicationComponent {
 
         if ($filter!==null) {
             foreach ($filter as $rule) {
-                if ($rule[0]!='/') {
-                    $passed = (bool)substr_count($str, $rule, strlen($str)-strlen($rule));
+                if ($rule[0]!='~') {
+                    $passed = (bool)substr_count($str, $rule);
                 } else {
                     $passed = (bool)preg_match($rule, $str);
                 }

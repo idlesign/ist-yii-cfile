@@ -35,12 +35,16 @@ class CFileTests extends PHPUnit_Framework_TestCase {
         $cf = $this->cf;
         $cf->createDir();
 
+        mkdir($cf->realpath . DIRECTORY_SEPARATOR . 'tst_b');
+
         $fnames = array(
             'tst_a.txt',
             'tst_b.php',
             'tst_c.jpg',
             'tst_d.php',
             'tst_dd.xls',
+            'tst_ddd.xls',
+            'tst_dddd.xls',
         );
 
         foreach ($fnames as $fname) {
@@ -48,10 +52,11 @@ class CFileTests extends PHPUnit_Framework_TestCase {
             $this->assertFalse($result===false);
         }
 
-        $this->assertEquals(count($cf->getContents(true)), count($fnames));
+        $this->assertEquals(count($cf->getContents(true)), count($fnames)+1);
         $this->assertEquals(count($cf->getContents(true, 'php')), 2);
         $this->assertEquals(count($cf->getContents(true, 'd.php')), 1);
-        $this->assertEquals(count($cf->getContents(true, '/d{1,2}/')), 2);
+        $this->assertEquals(count($cf->getContents(true, 'tst_b')), 2);
+        $this->assertEquals(count($cf->getContents(true, '~d{3,4}~')), 2);
 
     }
 
