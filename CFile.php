@@ -1166,7 +1166,7 @@ class CFile extends CApplicationComponent {
      * For folders purge parameter can be supplied.
      *
      * @param boolean $purge If 'True' folder would be deleted with all the descendants
-     * @return boolean 'True' if sucessfully deleted, 'False' on fail
+     * @return boolean 'True' if successfully deleted, 'False' on fail
      */
     public function delete($purge=True) {
         if ($this->getWriteable()) {
