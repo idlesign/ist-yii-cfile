@@ -1045,7 +1045,7 @@ class CFile extends CApplicationComponent {
             $permissions = octdec(str_pad($permissions, 4, '0', STR_PAD_LEFT));
 
             if (@chmod($this->_realpath, $permissions)) {
-                $this->_group = $permissions;
+                $this->_permissions = $permissions;
                 return $this;
             }
         }
