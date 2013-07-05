@@ -134,4 +134,26 @@ class CFileHelperTests extends PHPUnit_Framework_TestCase {
         $cf_sub->delete();
     }
 
+    public function testSetPermissions() {
+        $cf = $this->cf;
+        $cf->create();
+
+        $perms = $cf->getPermissions();
+        $this->assertNotEquals($cf->setPermissions(770), False);
+        $this->assertNotEquals($cf->setPermissions($perms), False);
+        $this->assertEquals($cf->getPermissions(), $perms);
+    }
+
+    public function testSetPermissionsRecursive() {
+        $cf = $this->cf;
+        $cf->createDir();
+
+        $cf_sub = CFileHelper::get($cf->getRealPath() . '/' . uniqid('sub'));
+        $cf_sub->create();
+
+        $this->assertNotEquals($cf->setPermissions(770, True), False);
+
+        $cf_sub->delete();
+    }
+
 }

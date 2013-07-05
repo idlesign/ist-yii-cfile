@@ -1037,15 +1037,30 @@ class CFile extends CApplicationComponent {
      * For UNIX systems.
      *
      * @param string $permissions New filesystem object permissions in numeric (octal, i.e. '0755') format
+     * @param bool $recursive Apply permissions to directory contents flag.
      * @return CFile|bool Current CFile object on success, 'False' on fail.
      */
-    public function setPermissions($permissions) {
+    public function setPermissions($permissions, $recursive=False) {
         if ($this->getExists() && is_numeric($permissions)) {
             // '755' normalize to octal '0755'
-            $permissions = octdec(str_pad($permissions, 4, '0', STR_PAD_LEFT));
+            $perms_oct = octdec(str_pad($permissions, 4, '0', STR_PAD_LEFT));
 
-            if (@chmod($this->_realpath, $permissions)) {
-                $this->_group = $permissions;
+            $success = @chmod($this->_realpath, $perms_oct);
+            if ($success) {
+                $this->_permissions = $permissions;
+            }
+
+            if ($success && $this->getIsDir() && $recursive) {
+                $contents = $this->getContents(True);
+                foreach ($contents as $filepath) {
+                    if (!@chmod($filepath, $perms_oct)) {
+                        $this->addLog('Unable to set permissions for "' . $filepath . '" to "' . $permissions . '"');
+                        $success = False;
+                    }
+                }
+            }
+
+            if ($success) {
                 return $this;
             }
         }
