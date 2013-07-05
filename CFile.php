@@ -5,7 +5,7 @@
  *
  * Please use CFileHelper class to access CFile functionality if not using Yii.
  *
- * @version 1.0a
+ * @version 1.0
  *
  * @author idle sign <idlesign@yandex.ru>
  * @link http://www.yiiframework.com/extension/cfile/

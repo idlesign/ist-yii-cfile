@@ -1,6 +1,19 @@
 Changelog
 =========
 
+v1.0.0 - July 5, 2013
++ Decoupled from Yii (new CFileHelper class).
++ Basic unit tests.
++ Composer compatibility (see #12).
++ send() now accepts `content_type` argument (see #9).
++ setGroup() & setOwner() now accept `recursive` flag.
++ setPermissions() now accept `recursive` flag (see #14).
++ __toString() now returns a realpath.
+* setGroup() & setOwner() now throws exceptions.
+* setGroup() & setOwner() now go smooth on non-posix.
+* Remastered directory contents filter (see #10).
+* rmdir() in delete() is silenced.
+
 
 v0.9 - August 3, 2011
 * fix: getSize() always returning formatted value (spotted by soulge)
