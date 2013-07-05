@@ -1185,7 +1185,7 @@ class CFile extends CApplicationComponent {
      */
     public function delete($purge=True) {
         if ($this->getWriteable()) {
-            if (($this->getIsFile() && @unlink($this->_realpath) ) || (!$this->getIsFile() && ($purge ? $this->purge() : True) && rmdir($this->_realpath) )) {
+            if (($this->getIsFile() && @unlink($this->_realpath) ) || (!$this->getIsFile() && ($purge ? $this->purge() : True) && @rmdir($this->_realpath) )) {
                 $this->_exists = $this->_readable = $this->_writeable = False;
                 return True;
             }
