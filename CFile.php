@@ -198,9 +198,8 @@ class CFile extends CApplicationComponent {
             }
 
             clearstatcache();
-            $cl = get_class($this);
-            $realPath = $cl::realPath($filepath);
-            $inst = $cl::getInstance($realPath);
+            $realPath = $this->realPath($filepath);
+            $inst = self::getInstance($realPath);
             $inst->_filepath = $filepath;
             $inst->_realpath = $realPath;
 
