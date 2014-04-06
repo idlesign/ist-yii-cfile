@@ -80,6 +80,11 @@ class CFile extends CApplicationComponent {
      */
     private $_mime_type;
     /**
+	 * Works on Windows System only
+     * @var integer the time the filesystem object was created (Unix timestamp e.g.: '1213760802')
+     */
+    private $_time_created;
+    /**
      * @var integer the time the filesystem object was last modified (Unix timestamp e.g.: '1213760802')
      */
     private $_time_modified;
@@ -650,6 +655,20 @@ class CFile extends CApplicationComponent {
         $bytes /= pow(1024, $expo);
 
         return $this->formatNumber($bytes, $format) . ' ' . $units[$expo];
+    }
+
+    /**
+     * Returns the current file created time. Works on Windows System only!
+     * Returned Unix timestamp could be passed to php date() function.
+     *
+     * @return integer created at time Unix timestamp (e.g.: '1213760802')
+     */
+    public function getTimeCreated() {
+        if (empty($this->_time_created)) {
+            $this->_time_created = $this->getExists() ? filectime($this->_realpath) : null;
+        }
+
+        return $this->_time_created;
     }
 
     /**
