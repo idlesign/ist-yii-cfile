@@ -1247,6 +1247,8 @@ class CFile extends CApplicationComponent {
                     $filename = $this->getBasename();
                 }
 
+                $chunksize = 5 * (1024 * 1024); //5 MB (= 5 242 880 bytes) per one chunk of file.
+
                 // Disable browser caching.
                 header('Cache-control: private');
                 header('Pragma: private');
@@ -1261,7 +1263,23 @@ class CFile extends CApplicationComponent {
                     header('X-Sendfile: '.$this->_realpath);
                 } else {
                     if ($contents = $this->getContents()) {
-                        echo $contents;
+                    	if($this->getSize(False) > $chunksize)
+                        { 
+                            $handle = fopen($filename, 'rb'); 
+
+                            while (!feof($handle))
+                            { 
+                              print(@fread($handle, $chunksize));
+
+                              ob_flush();
+                              flush();
+                            } 
+
+                            fclose($handle); 
+                        }
+                        else{
+                	    echo $contents;
+                        }
                     }
                 }
                 exit;
