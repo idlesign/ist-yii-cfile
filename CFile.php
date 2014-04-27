@@ -715,7 +715,7 @@ class CFile extends CApplicationComponent {
     }
 
     /**
-     * Returns the current file extension from $_extension property set by {@link pathInfo} 
+     * Returns the current file extension from $_extension property set by {@link pathInfo}
      * (e.g.: 'htm' for '/var/www/htdocs/files/myfile.htm').
      *
      * @return string Current file extension without the leading dot
