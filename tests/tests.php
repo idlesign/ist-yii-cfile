@@ -64,6 +64,31 @@ class CFileHelperTests extends PHPUnit_Framework_TestCase {
         $this->assertEquals((string)$this->cf, $this->filepath);
     }
 
+    public function testGetRelativePath() {
+        $cf = $this->cf;
+        $cf->create();
+
+        // Save the current working directory for the last test-case
+        $current_working_directory = getcwd();
+
+        // Current working directory is the root directory
+        chdir('/');
+        $relative_path_expected = sys_get_temp_dir() . '/' . $cf->getFilename();
+        $relative_path_actual = $cf->getRelativePath();
+        $this->assertEquals($relative_path_expected,$relative_path_actual);
+
+        // Current working directory is within the file path
+        chdir(sys_get_temp_dir() . '/');
+        $relative_path_expected = '/' . $cf->getFilename();
+        $relative_path_actual = $cf->getRelativePath();
+        $this->assertEquals($relative_path_expected,$relative_path_actual);
+
+        // Current working directory is outside of the file path
+        chdir($current_working_directory);
+        $this->setExpectedException('CFileException','Unable to resolve relative path for filesystem object.');
+        $cf->getRelativePath();
+    }
+
     public function testSetOwner() {
         $cf = $this->cf;
         $cf->create();

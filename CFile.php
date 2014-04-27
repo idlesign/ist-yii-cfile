@@ -285,6 +285,26 @@ class CFile extends CApplicationComponent {
 
         return $this->_realpath;
     }
+    
+    /**
+     * Returns relative filesystem object path figured by script on the basis of $_realpath
+     *
+     * @return string Relative file path
+     */
+    public function getRelativePath() {
+        $current_path = getcwd();
+        if ($current_path === "/")
+        {
+            return $this->_realpath;
+        }
+        else if (substr($this->_realpath,0,strlen($current_path)) === $current_path ) {
+            return substr($this->_realpath,strlen($current_path));
+        }
+        else
+        {
+            throw new CFileException('Unable to resolve relative path for filesystem object.');
+        }
+    }
 
     /**
      * Base real filesystem object path resolving method.
