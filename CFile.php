@@ -80,7 +80,7 @@ class CFile extends CApplicationComponent {
      */
     private $_mime_type;
     /**
-	 * Works on Windows System only
+     * Works on Windows System only
      * @var integer the time the filesystem object was created (Unix timestamp e.g.: '1213760802')
      */
     private $_time_created;
