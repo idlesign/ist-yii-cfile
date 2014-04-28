@@ -23,6 +23,7 @@ Quick overview
     * readable
     * writeable
     * realpath
+    * relativepath
     * basename (+setter)
     * filename (+setter)
     * dirname
