@@ -89,25 +89,35 @@ class CFileHelperTests extends PHPUnit_Framework_TestCase {
         $cf->getRelativePath();
     }
 
-    public function testSetOwner() {
+    public function testSetOwner_000() {
         $cf = $this->cf;
         $cf->create();
 
         $owner_name = $cf->getOwner();
         $owner_id = $cf->getOwner(False);
 
+        $this->assertNotEquals($cf->setOwner($owner_name), False);
+
+        $this->assertNotEquals($cf->setOwner($owner_id), False);
+
         $this->setExpectedException('CFileException');
         $cf->setOwner('nosuchuser123987');
+    }
 
-        $this->assertNotEquals($cf->setOwner($owner_name), False);
+    public function testSetOwner_001() {
+        $cf = $this->cf;
+        $cf->create();
 
         $this->setExpectedException('CFileException');
         $cf->setOwner('4567890123');
+    }
+
+    public function testSetOwner_002() {
+        $cf = $this->cf;
+        $cf->create();
 
         $this->setExpectedException('CFileException');
         $cf->setOwner(4567890123);
-
-        $this->assertNotEquals($cf->setOwner($owner_id), False);
     }
 
     public function testSetOwnerRecursive() {
