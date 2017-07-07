@@ -3,10 +3,13 @@ ist-yii-cfile
 http://github.com/idlesign/ist-yii-cfile
 
 
+.. warning:: This project is no longer mainteined. Thank you for watching us.
+
+
 What's that
 -----------
 
-ist-yii-cfile is an extension for Yii Framework, bundling commonly used functions for filesystem objects (files and directories) manipulation.
+**ist-yii-cfile** is an extension for Yii Framework, bundling commonly used functions for filesystem objects (files and directories) manipulation.
 
 This extension can also operate in standalone mode, i.e. without Yii.
 
@@ -14,7 +17,7 @@ This extension can also operate in standalone mode, i.e. without Yii.
 Quick overview
 --------------
 
-`Properties`
+* Properties
     * exists
     * isdir
     * isfile
@@ -35,7 +38,7 @@ Quick overview
     * group (+setter)
     * permissions (+setter)
 
-`Methods`
+* Methods
     * create
     * createdir
     * purge
@@ -48,27 +51,25 @@ Quick overview
 
 Requirements
 ------------
-
-    * PHP 5.1+ and Yii 1.0 or above to use as Yii extension. 
-    * PHP 5.1+ to use without Yii.
+* PHP 5.1+ and Yii 1.0 or above to use as Yii extension. 
+* PHP 5.1+ to use without Yii.
 
 
 Installation
 ------------
-
-    * For Yii: extract extension files under `protected/extensions/file`.
-    * W/o Yii: extract extension files into a directory of choise.
+* For Yii: extract extension files under `protected/extensions/file`.
+* Without Yii: extract extension files into a directory of choise.
 
 
 Usage
 -----
 
-To use with Yii Framework:
+**To use with Yii Framework:**
 
-  * Introduce CFile to Yii.
-  * Add definition to CWebApplication config file (main.php)
+* Introduce CFile to Yii.
+* Add definition to CWebApplication config file (main.php)
 
-   ::
+.. code-block:: php
 
     'components'=>array(
         ...
@@ -78,9 +79,9 @@ To use with Yii Framework:
         ...
     ),
 
-  * Now you can access CFile properties and methods as follows:
+* Now you can access CFile properties and methods as follows:
 
-   ::
+.. code-block:: php
 
     $myfile = Yii::app()->file->set('files/test.txt', true);
     /*
@@ -94,7 +95,9 @@ To use with Yii Framework:
     // $myfile now contains CFile object, let's see what do we got there.
 
     var_dump($myfile);  // You may dump object to see all its properties,
+    
     echo $myfile->size;  // or get property,
+    
     $myfile->permissions = 755;  // or set property,
     $mynewfile = $myfile->copy('test2.txt');  // or manipulate file somehow, e.g. copy.
 
@@ -137,6 +140,7 @@ To use with Yii Framework:
      * (supposing that it is in Yii extensions path in the 'file' subdirectory).
      */
     $cfileDir = Yii::app()->file->set('ext.file');
+    
     print_r($cfileDir->contents);
 
     /*
@@ -160,9 +164,9 @@ To use with Yii Framework:
      */
     $myfile->download('myfastfile.txt', true);
 
-  * The other way to use this class is to import it into Yii:
+* The other way to use this class is to import it into Yii:
 
-   ::
+.. code-block:: php
 
     Yii::import('application.extensions.file.CFile');
 
@@ -173,9 +177,11 @@ To use with Yii Framework:
     }
 
 
-To use without Yii simply import CFileHelper.php when needed and use CFileHelper::get() to get CFile object for a filesystem resource.
+**To use without Yii**
 
-   ::
+Simply import CFileHelper.php when needed and use CFileHelper::get() to get CFile object for a filesystem resource.
+
+.. code-block:: php
 
     $cf_file = CFileHelper::get('files/test.txt');  // $cf_cile now contains CFile object, use it as required.
     $cf_file->copy('mycopy.txt');
@@ -185,17 +191,3 @@ Further reading
 ---------------
 
 Detailed information about class properties and methods could be found in CFile.php source code, do not hesitate to digg into it.
-
-
-Get involved into ist-yii-cfile
--------------------------------
-
-**Submit issues.** If you spotted something weird in application behavior or want to propose a feature you can do that at https://github.com/idlesign/ist-yii-cfile/issues
-
-**Write code.** If you are eager to participate in application development, fork it at https://github.com/idlesign/ist-yii-cfile, write your code, whether it should be a bugfix or a feature implementation, and make a pull request right from the forked project page.
-
-
-The tip
--------
-
-You might be interested in other Yii extensions — http://www.yiiframework.com/extensions/
