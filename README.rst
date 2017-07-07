@@ -3,7 +3,7 @@ ist-yii-cfile
 http://github.com/idlesign/ist-yii-cfile
 
 
-.. warning:: This project is no longer mainteined. Thank you for watching us.
+.. warning:: **This project is no longer maintained. Thank you for watching us.**
 
 
 What's that
